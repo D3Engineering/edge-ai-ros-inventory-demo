@@ -1,5 +1,6 @@
 #!/bin/env python3
-from robot_state import RobotState
+from d3_inventory_demo.robot_state import RobotState
+from std_msgs.msg import String
 
 num_targets_a = 1
 num_targets_b = 2
@@ -60,7 +61,7 @@ def drive(target_point):
     print("target:" + str(target_point))
     input("Press enter to continue")
 
-def scan(num_targets):
+def scan():
     global state
     print(state)
     print("Num targets:" + str(num_targets))
@@ -77,9 +78,15 @@ def done():
     input("Press enter to continue")
 
 if __name__ == '__main__':
-    state = RobotState.STARTUP
-    while state is not RobotState.DONE:
-        process_state(state)
-        state = state.next()
+    try:
+        rospy.init_node('d3_inventory_controller')
+        state_pub = rospy.Publisher('/robot_state', String)
+        state = RobotState.STARTUP
+        while True:
+            state_pub.publish(state.name)
+            process_state(state)
+            rospy.sleep(5)
+            state = state.next()
+    except rospy.ROSInterruptException:
+        rospy.loginfo("Navigation test finished.")
 
-    process_state(state)
