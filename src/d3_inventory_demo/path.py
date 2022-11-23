@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/bin/env python3
 
 import rospy
 import actionlib
@@ -7,10 +7,23 @@ from nav_msgs.msg import Odometry
 import tf
 import math
 
-def forward():
-    position = rospy.wait_for_message('/odom', Odometry)
-    print(position)
-    return position
+def quaternion_to_euler(pose_q):
+    quaternion = (
+        position.pose.pose.orientation.x,
+        position.pose.pose.orientation.y,
+        position.pose.pose.orientation.z,
+        position.pose.pose.orientation.w)
+    euler = tf.transformations.euler_from_quaternion(quaternion)
+    # (roll, pitch, yaw)
+    return euler
+
+def euler_to_quaternion(pose_e):
+    roll  = pose_e.x
+    pitch = pose_e.y
+    yaw   = pose_e.z
+    quaternion = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
+    # (x, y, z, w)
+    return quaternion
 
 def movebase_client():
 
@@ -24,16 +37,12 @@ def movebase_client():
     goal.target_pose.header.frame_id = "map"
     goal.target_pose.header.stamp = rospy.Time.now()
 
+    pose_q = position.pose.pose.orientation
+    pose_e = quaternion_to_euler(pose_q)
+    print(pose_q)
+    print(pose_e)
+    # https://answers.ros.org/question/69754/quaternion-transformations-in-python/
     # Find euler angles for easy computation
-    quaternion = (
-        position.pose.pose.orientation.x,
-        position.pose.pose.orientation.y,
-        position.pose.pose.orientation.z,
-        position.pose.pose.orientation.w)
-    euler = tf.transformations.euler_from_quaternion(quaternion)
-    roll = euler[0]
-    pitch = euler[1]
-    yaw = euler[2]
 
     goal.target_pose.pose.position.x = position.pose.pose.position.x + 1 * math.cos(yaw)
     goal.target_pose.pose.position.y = position.pose.pose.position.y + 1 * math.sin(yaw)

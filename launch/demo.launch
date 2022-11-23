@@ -1,0 +1,5 @@
+<!-- XML -->
+<launch>
+    <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen"/>
+</launch>
+
