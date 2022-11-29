@@ -3,27 +3,49 @@
 import rospy
 import actionlib
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+from geometry_msgs.msg import Quaternion
 from nav_msgs.msg import Odometry
 import tf
 import math
 
 def quaternion_to_euler(pose_q):
     quaternion = (
-        position.pose.pose.orientation.x,
-        position.pose.pose.orientation.y,
-        position.pose.pose.orientation.z,
-        position.pose.pose.orientation.w)
+        pose_q.x,
+        pose_q.y,
+        pose_q.z,
+        pose_q.w)
     euler = tf.transformations.euler_from_quaternion(quaternion)
     # (roll, pitch, yaw)
     return euler
 
 def euler_to_quaternion(pose_e):
-    roll  = pose_e.x
-    pitch = pose_e.y
-    yaw   = pose_e.z
-    quaternion = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
+    quaternion = tf.transformations.quaternion_from_euler(*pose_e)
     # (x, y, z, w)
     return quaternion
+
+def set_target_position(start_pose, distance, angle = 0):
+    pose_q = start_pose.orientation
+    pose_e = quaternion_to_euler(pose_q)
+    pose_e = list(pose_e)
+    pose_e[2] += angle
+    pose_e = tuple(pose_e)
+    target_pose = start_pose
+    target_pose.position.x = start_pose.position.x + distance * math.cos(pose_e[2])
+    target_pose.position.y = start_pose.position.y + distance * math.sin(pose_e[2])
+    
+    target_pose.orientation = Quaternion(*euler_to_quaternion(pose_e))
+    return target_pose
+
+
+def pose_to_goal(target_pose):
+    goal = MoveBaseGoal()
+
+    goal.target_pose.header.frame_id = "map"
+    goal.target_pose.header.stamp = rospy.Time.now()
+    goal.target_pose.pose = target_pose
+
+    return goal
+
 
 def movebase_client():
 
@@ -31,29 +53,15 @@ def movebase_client():
 
     client.wait_for_server()
 
-    goal = MoveBaseGoal()
     # get current position
     position = rospy.wait_for_message('/odom', Odometry)
-    goal.target_pose.header.frame_id = "map"
-    goal.target_pose.header.stamp = rospy.Time.now()
+    pose = position.pose.pose
+    target_pose = set_target_position(pose, 1, 0)
+    goal = pose_to_goal(target_pose)
 
-    pose_q = position.pose.pose.orientation
-    pose_e = quaternion_to_euler(pose_q)
-    print(pose_q)
-    print(pose_e)
-    # https://answers.ros.org/question/69754/quaternion-transformations-in-python/
-    # Find euler angles for easy computation
-
-    goal.target_pose.pose.position.x = position.pose.pose.position.x + 1 * math.cos(yaw)
-    goal.target_pose.pose.position.y = position.pose.pose.position.y + 1 * math.sin(yaw)
-    goal.target_pose.pose.position.z = position.pose.pose.position.z
-
-    goal.target_pose.pose.orientation.x = position.pose.pose.orientation.x
-    goal.target_pose.pose.orientation.y = position.pose.pose.orientation.y
-    goal.target_pose.pose.orientation.z = position.pose.pose.orientation.z
-    goal.target_pose.pose.orientation.w = position.pose.pose.orientation.w
-
+    print("Sending goal")
     client.send_goal(goal)
+    print("Waiting for goal")
     wait = client.wait_for_result()
     if not wait:
         rospy.logerr("Action server not available!")
