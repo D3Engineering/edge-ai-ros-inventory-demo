@@ -1,0 +1,64 @@
+<!-- XML -->
+<launch>
+
+    <!-- These parameters vary per-camera -->
+    <arg name="device" default="/dev/imx390-0-0"/>
+    <arg name="subdev" default="$(arg device)-subdev"/>
+
+    <!-- LDC binary file -->
+    <arg name="ldc_dcc_file" default="/opt/imaging/imx390/robotcam3_equidistant_960x540_LUT.bin"/>
+
+    <!-- output resolution: width and height -->
+    <arg name="width" default="960"/>
+    <arg name="height" default="540"/>
+
+    <!-- framerate (integer): inactive, 30 FPS (default, max) -->
+    <!-- Can be enabled by e.g., adding videorate before tiovxdlcolorconvert, but it creases A72 loading -->
+    <arg name="framelimit" default="false"/>
+    <arg name="framerate" default="30"/>
+
+    <!-- node name -->
+    <arg name="node_name" default="gscam_node"/>
+
+    <!-- camera name: also used as namespace for the output topic name -->
+    <arg name="camera_name" default="imx390"/>
+
+    <!-- DCC VISS binary file -->
+    <arg name="dcc_isp_file" default="/opt/imaging/imx390/dcc_viss.bin"/>
+
+    <!-- DCC 2A binary file -->
+    <arg name="dcc_2a_file" default="/opt/imaging/imx390/dcc_2a.bin"/>
+
+    <!-- camera_info URL: replace with camera_info from camera calibration -->
+    <arg name="camera_info_url" default="package://gscam/config/IMX390_HD_camera_info.yaml"/>
+
+    <!-- GStreamer pipeline specified in gscam_config was tested with IMX390 camera,
+        'edgeai-tiovx-modules' and 'edgeai-gst-plugins' are assumed to be already installed in TDA4 ROS container.
+        Note: GStreamer pipeline also includes the LDC plugin. Raw resolution is 1936 x 1100,
+        and the LDC plugin (tiovxldc) performs rectification and then cropping to output 1920 x 1080 in NV12.
+        Followed by MSC plugin (tiovxmultiscaler) to resize to the output resolution.
+        Note: /dev/v4l-subdev ID can change, depending on the device attached, and at reboot. -->
+    <node pkg="gscam" name="gscam_node_0" type="gscam" output="screen">
+        <param name="gscam_config" if="$(arg framelimit)"
+            value="v4l2src device=$(arg device) do-timestamp=true ! videorate ! video/x-bayer, width=1936, height=1096, format=rggb12, framerate=$(arg framerate)/1 !
+            tiovxisp sink_0::device=$(arg subdev) sensor-name=SENSOR_SONY_IMX390_UB953_D3 dcc-isp-file=$(arg dcc_isp_file)
+            sink_0::dcc-2a-file=$(arg dcc_2a_file) format-msb=11 ! video/x-raw, format=NV12 !
+            tiovxldc sensor-name=SENSOR_SONY_IMX390_UB953_D3 lut-file=$(arg ldc_dcc_file) ldc-ds-factor=2 ldc-table-width=$(arg width) ldc-table-height=$(arg height) out-block-height=32 out-block-width=32 !
+            tiovxdlcolorconvert target=1 out-pool-size=4"/>
+        <param name="gscam_config" unless="$(arg framelimit)"
+            value="v4l2src device=$(arg device) do-timestamp=true ! video/x-bayer, width=1936, height=1096, format=rggb12 !
+            tiovxisp sink_0::device=$(arg subdev) sensor-name=SENSOR_SONY_IMX390_UB953_D3 dcc-isp-file=$(arg dcc_isp_file)
+            sink_0::dcc-2a-file=$(arg dcc_2a_file) format-msb=11 ! video/x-raw, format=NV12 !
+            tiovxldc sensor-name=SENSOR_SONY_IMX390_UB953_D3 lut-file=$(arg ldc_dcc_file) ldc-ds-factor=2 ldc-table-width=$(arg width) ldc-table-height=$(arg height) out-block-height=32 out-block-width=32 !
+            tiovxdlcolorconvert target=1 out-pool-size=4"/>
+        <param name="camera_name"     value="$(arg camera_name)"/>
+        <param name="camera_info_url" value="$(arg camera_info_url)"/>
+        <param name="width"           value="$(arg width)"/>
+        <param name="height"          value="$(arg height)"/>
+        <param name="framerate"       value="$(arg framerate)"/>
+        <param name="sync_sink"       value="false"/>
+        <param name="use_gst_timestamps" value="false"/>
+        <!-- image encoding: "yuv420" - publish in "NV12" -->
+        <param name="image_encoding"  value="yuv420"/>
+    </node>
+</launch>
