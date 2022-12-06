@@ -32,7 +32,7 @@ def set_target_position(start_pose, distance, angle = 0):
     target_pose = start_pose
     target_pose.position.x = start_pose.position.x + distance * math.cos(pose_e[2])
     target_pose.position.y = start_pose.position.y + distance * math.sin(pose_e[2])
-    
+
     target_pose.orientation = Quaternion(*euler_to_quaternion(pose_e))
     return target_pose
 
@@ -50,7 +50,6 @@ def pose_to_goal(target_pose):
 def movebase_client():
 
     client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
-
     client.wait_for_server()
 
     # get current position

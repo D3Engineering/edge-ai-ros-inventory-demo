@@ -24,5 +24,5 @@ class RobotState(Enum):
         if self is not RobotState.DONE:
             next_state = RobotState(self.value+1)
         else:
-            next_state = RobotState.STARTUP
+            next_state = RobotState.PATHING_A
         return next_state
