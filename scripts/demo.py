@@ -101,36 +101,17 @@ def path(target_point):
 
     # BLT^-1 * ODOM
     # This is the correct one.  Don't touch it.
+    # We think that it's supposed to be BLT * ODOM^-1 - but we believe that
+    # tf_listener.lookupTransform() - though it says it's arguments are "target, source"
+    # we think it's returning a result as if it were "source, target".
     blt_mat = np.linalg.inv(blt_mat)
     map2odom_mat = blt_mat @ odom_mat
 
     map2odom_quat = R.from_matrix(map2odom_mat[:3,:3]).as_quat()
     map2odom_pos = map2odom_mat[:3,3]
 
-    # Publish result in map->odom transform
-    #current_time = rospy.Time.now()
-    #map2odom_broadcaster.sendTransform(
-    #    map2odom_pos,
-    #    map2odom_quat,
-    #    current_time,
-    #    "odom",
-    #    "map"
-    #)
-    static_transformStamped = geometry_msgs.msg.TransformStamped()
-
-    static_transformStamped.header.stamp = rospy.Time.now()
-    static_transformStamped.header.frame_id = "map"
-    static_transformStamped.child_frame_id = "odom"
-
-    static_transformStamped.transform.translation.x = map2odom_pos[0]
-    static_transformStamped.transform.translation.y = map2odom_pos[1]
-    static_transformStamped.transform.translation.z = map2odom_pos[2]
-
-    static_transformStamped.transform.rotation.x = map2odom_quat[0]
-    static_transformStamped.transform.rotation.y = map2odom_quat[1]
-    static_transformStamped.transform.rotation.z = map2odom_quat[2]
-    static_transformStamped.transform.rotation.w = map2odom_quat[3]
-
+    # Publish result in map->odom transform - static transform 
+    static_transformStamped = setup_static_transform("map", "odom", map2odom_pos, map2odom_quat)
     map2odom_broadcaster.sendTransform(static_transformStamped)
 
 # Given a target point we will create and send a goal to move_base,
@@ -190,32 +171,9 @@ def startup():
     point_home = read_point_file("HOME")
     print(point_a)
 
-    #map2odom_broadcaster = tf.TransformBroadcaster()
     tf_listener = tf.TransformListener()
     map2odom_broadcaster = tf2_ros.StaticTransformBroadcaster()
-    #current_time = rospy.Time.now()
-    #map2odom_broadcaster.sendTransform(
-    #    (0., 0., 0.),
-    #    (0., 0., 0., 1.),
-    #    current_time,
-    #    "odom",
-    #    "map"
-    #)
-    static_transformStamped = geometry_msgs.msg.TransformStamped()
-
-    static_transformStamped.header.stamp = rospy.Time.now()
-    static_transformStamped.header.frame_id = "map"
-    static_transformStamped.child_frame_id = "odom"
-
-    static_transformStamped.transform.translation.x = 0.
-    static_transformStamped.transform.translation.y = 0.
-    static_transformStamped.transform.translation.z = 0.
-
-    static_transformStamped.transform.rotation.x = 0.
-    static_transformStamped.transform.rotation.y = 0.
-    static_transformStamped.transform.rotation.z = 0.
-    static_transformStamped.transform.rotation.w = 1.
-
+    static_transformStamped = setup_static_transform("map", "odom", [0.,0.,0.], [0.,0.,0.,1.])
     map2odom_broadcaster.sendTransform(static_transformStamped)
 
     # The move base wait MUST happen after the transform is published
@@ -262,8 +220,25 @@ def read_point_file(point_name):
     result_pose.position.y = js[point_name]["position"]["y"]
     result_pose.position.z = js[point_name]["position"]["z"]
 
-    # Return pose
     return result_pose
+
+# Given a postiion & rotation (in quats) - returns a TransformStamped - ready for publishing
+def setup_static_transform(source, target, position, quaternion):
+    static_transformStamped = geometry_msgs.msg.TransformStamped()
+
+    static_transformStamped.header.stamp = rospy.Time.now()
+    static_transformStamped.header.frame_id = source
+    static_transformStamped.child_frame_id = target
+
+    static_transformStamped.transform.translation.x = position[0]
+    static_transformStamped.transform.translation.y = position[1]
+    static_transformStamped.transform.translation.z = position[2]
+
+    static_transformStamped.transform.rotation.x = quaternion[0]
+    static_transformStamped.transform.rotation.y = quaternion[1]
+    static_transformStamped.transform.rotation.z = quaternion[2]
+    static_transformStamped.transform.rotation.w = quaternion[3]
+    return static_transformStamped
 
 if __name__ == '__main__':
     try:
