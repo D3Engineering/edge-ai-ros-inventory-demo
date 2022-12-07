@@ -247,7 +247,7 @@ if __name__ == '__main__':
 
         process_state(state)
         state = state.next()
-        while True:
+        while not rospy.is_shutdown():
             rospy.loginfo("Publishing state: " + state.name)
             state_pub.publish(state.name)
             process_state(state)
