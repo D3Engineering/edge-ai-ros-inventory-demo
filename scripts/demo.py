@@ -15,7 +15,7 @@ from geometry_msgs.msg import Quaternion,Point,Pose
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from d3_inventory_demo.robot_state import RobotState
 from d3_inventory_demo.path import set_target_position, pose_to_goal 
-from d3_motorctl import apriltag_odom
+from d3_apriltag import apriltag_odom
 
 WAIT_FOR_PC = False
 
