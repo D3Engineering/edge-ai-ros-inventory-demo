@@ -82,7 +82,7 @@ def path(target_point):
     global state, point_a, point_b, point_c, point_home
     # Run april-tag detection code to determine robot position
     current_pose = april_tag.get_pose()
-
+    rospy.sleep(1)
     # Determine position where robot should be by querying map -> base-link-temp
     # (robot real position after april-tag detection)
     #t = tf_listener.getLatestCommonTime("/base_link_temp", "/map")
@@ -251,7 +251,7 @@ if __name__ == '__main__':
             rospy.loginfo("Publishing state: " + state.name)
             state_pub.publish(state.name)
             process_state(state)
-            rospy.sleep(1)
+            rospy.sleep(0.5)
             state = state.next()
 
     except rospy.ROSInterruptException:
