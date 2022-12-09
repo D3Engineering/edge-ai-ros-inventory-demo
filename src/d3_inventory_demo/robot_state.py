@@ -1,6 +1,7 @@
 from enum import Enum,auto
 
 class RobotState(Enum):
+    # Startup state is only entered once
     STARTUP = auto()
 
     PATHING_A = auto()
@@ -25,4 +26,12 @@ class RobotState(Enum):
             next_state = RobotState(self.value+1)
         else:
             next_state = RobotState.PATHING_A
+        return next_state
+
+    def prev(self):
+        next_state = None
+        if self is not RobotState.PATHING_A:
+            next_state = RobotState(self.value-1)
+        else:
+            next_state = RobotState.DONE
         return next_state

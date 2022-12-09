@@ -2,14 +2,14 @@
 <launch>
     <!-- LDC binary file -->
     <arg name="ldc_dcc_file_540p" default="/opt/imaging/imx390/robotcam3_equidistant_960x540_LUT.bin"/>
-    <arg name="ldc_dcc_file_1080p" default="/opt/imaging/imx390/imx390_robotcam4_equidistant_1280x720_LUT.bin"/>
+    <arg name="ldc_dcc_file_1080p" default="/opt/imaging/imx390/robotcam4_equidistant_1920x1080_LUT.bin"/>
     <!--
     <arg name="ldc_dcc_file_1080p" default="/opt/imaging/imx390/imx390_narrow_plumb_bob_1936x1096_LUT.bin"/>
     -->
 
     <!-- camera_info URL: replace with camera_info from camera calibration -->
     <arg name="camera_info_540p" default="file:///opt/imaging/imx390/robotcam3_equidistant_960x540_rect.yml"/>
-    <arg name="camera_info_1080p" default="file:///opt/imaging/imx390/imx390_robotcam4_equidistant_1280x720_rect.yml"/>
+    <arg name="camera_info_1080p" default="file:///opt/imaging/imx390/robotcam4_equidistant_1920x1080_rect.yml"/>
     <!--
     <arg name="camera_info_1080p" default="file:///opt/imaging/imx390/imx390_narrow_plumb_bob_1936x1096_rect.yml"/>
     -->
@@ -41,16 +41,16 @@
         <arg name="device" value="/dev/imx390-1-2"/>
         <arg name="ldc_dcc_file" value="$(arg ldc_dcc_file_1080p)"/>
         <arg name="camera_info_url" value="$(arg camera_info_1080p)"/>
-        <arg name="width" value="1280"/>
-        <arg name="height" value="720"/>
+        <arg name="width" value="1920"/>
+        <arg name="height" value="1080"/>
         <arg name="framerate" value="2"/>
         <arg name="framelimit" default="true"/>
     </include>
 
     <!-- color conversion for input image_raw for visualization -->
     <node ns="back" pkg="ti_viz_nodes" type="viz_color_conv_yuv2rgb" name="viz_color_conv_yuv2rgb_node" output="screen" args="" required="true">
-        <param name="width"             value="1280"/>
-        <param name="height"            value="720"/>
+        <param name="width"             value="1920"/>
+        <param name="height"            value="1080"/>
         <param name="input_yuv_topic"   value="imx390/image_raw"/>
         <param name="output_rgb_topic"  value="imx390/image_raw_rgb"/>
         <param name="yuv_format"        value="YUV420"/>
