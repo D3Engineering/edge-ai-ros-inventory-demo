@@ -4,19 +4,19 @@ class RobotState(Enum):
     # Startup state is only entered once
     STARTUP = auto()
 
-    PATHING_A = auto()
+    #PATHING_A = auto()
     DRIVING_A = auto()
     SCANNING_A = auto()
 
-    PATHING_B = auto()
+    #PATHING_B = auto()
     DRIVING_B = auto()
     SCANNING_B = auto()
 
-    PATHING_C = auto()
+    #PATHING_C = auto()
     DRIVING_C = auto()
     SCANNING_C = auto()
 
-    PATHING_HOME = auto()
+    #PATHING_HOME = auto()
     DRIVING_HOME = auto()
     DONE = auto()
 
@@ -25,12 +25,12 @@ class RobotState(Enum):
         if self is not RobotState.DONE:
             next_state = RobotState(self.value+1)
         else:
-            next_state = RobotState.PATHING_A
+            next_state = RobotState.DRIVING_A
         return next_state
 
     def prev(self):
         next_state = None
-        if self is not RobotState.PATHING_A:
+        if self is not RobotState.DRIVING_A:
             next_state = RobotState(self.value-1)
         else:
             next_state = RobotState.DONE

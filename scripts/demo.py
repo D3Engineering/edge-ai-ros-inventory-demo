@@ -14,25 +14,23 @@ from std_msgs.msg import String, Int32
 from geometry_msgs.msg import Quaternion,Point,Pose
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from d3_inventory_demo.robot_state import RobotState
-from d3_inventory_demo.path import set_target_position, pose_to_goal 
+from d3_inventory_demo.tf_broadcast_helper import tf_broadcast_helper
+from d3_inventory_demo.path import set_target_position, pose_to_goal
 from d3_apriltag import apriltag_odom
 
 WAIT_FOR_PC = False
 
-num_targets_a = 6
-num_targets_b = 6
-num_targets_c = 6
+num_targets_a = 1
+num_targets_b = 1
+num_targets_c = 1
 
 # Points are populated during the startup routine
-point_a = None
-point_b = None
-point_c = None
-point_home = None
+points = {}
 state = None
 
 # A whole bunch of objects we initialize in startup()
 move_base_client = None
-map2odom_broadcaster = None
+tf_broadcaster = None
 tf_listener = None
 state_pub = None
 dmtx_count_pub = None
@@ -44,45 +42,37 @@ def process_state(current_state):
         startup()
 
     # SHELF A:
-    elif state is RobotState.PATHING_A:
-        path(point_a)
     elif state is RobotState.DRIVING_A:
-        drive(point_a)
+        drive("point_a")
     elif state is RobotState.SCANNING_A:
         scan(num_targets_a)
 
     # SHELF B:
-    elif state is RobotState.PATHING_B:
-        path(point_b)
     elif state is RobotState.DRIVING_B:
-        drive(point_b)
+        drive("point_b")
     elif state is RobotState.SCANNING_B:
         scan(num_targets_b)
 
     # SHELF C:
-    elif state is RobotState.PATHING_C:
-        path(point_c)
     elif state is RobotState.DRIVING_C:
-        drive(point_c)
+        drive("point_c")
     elif state is RobotState.SCANNING_C:
         scan(num_targets_c)
 
     # DRIVE HOME
-    elif state is RobotState.PATHING_HOME:
-        path(point_home)
     elif state is RobotState.DRIVING_HOME:
-        drive(point_home)
+        drive("home")
+
     # DONE
     elif state is RobotState.DONE:
         done()
 
 # This state is likely mis-named.  It is actually the
 # step where we re-calculate localization.
-def path(target_point):
-    global state, point_a, point_b, point_c, point_home
+def localize():
     # Run april-tag detection code to determine robot position
     current_pose = april_tag.get_pose()
-    rospy.sleep(1)
+    rospy.sleep(0.01)
     # Determine position where robot should be by querying map -> base-link-temp
     # (robot real position after april-tag detection)
     #t = tf_listener.getLatestCommonTime("/base_link_temp", "/map")
@@ -111,13 +101,13 @@ def path(target_point):
     map2odom_pos = map2odom_mat[:3,3]
 
     # Publish result in map->odom transform - static transform 
-    static_transformStamped = setup_static_transform("map", "odom", map2odom_pos, map2odom_quat)
-    map2odom_broadcaster.sendTransform(static_transformStamped)
+    tf_broadcaster.broadcast_transform("map", "odom", map2odom_pos, map2odom_quat)
 
 # Given a target point we will create and send a goal to move_base,
 # then wait for the robot to reach that goal.
-def drive(target_point):
-    global state
+def drive(target_name):
+    global state, points
+    target_point = points[target_name]
     rospy.loginfo(state)
     rospy.loginfo("target:" + str(target_point))
 
@@ -126,17 +116,45 @@ def drive(target_point):
         return
 
     # Technically this code can stay - drive to the goal position
-    goal = pose_to_goal(target_point)
+    local_target = target_point
+    reached_destination = False
+    error_threshold = 0.02
+    while not reached_destination:
+        goal = pose_to_goal(local_target)
 
-    print("Sending goal")
-    move_base_client.send_goal(goal)
-    print("Waiting for goal")
-    wait = move_base_client.wait_for_result()
-    if not wait:
-        rospy.logerr("Action server not available!")
-        rospy.signal_shutdown("Action server not available!")
-    else:
-        return move_base_client.get_result()
+        # Tell the robot to drive to the target
+        move_base_client.send_goal(goal)
+        wait = move_base_client.wait_for_result()
+        if not wait:
+            rospy.logerr("Action server not available!")
+            rospy.signal_shutdown("Action server not available!")
+
+        # run localize to determine where the robot is on the map.
+        # to get BLT and BL updated accordingly
+        localize()
+
+        # Measure YAW offset between BLT and BL, must be less than 0.01 radians
+        t = tf_listener.getLatestCommonTime("/base_link", "/" + target_name)
+        bl_to_pta, bl_to_pta_quat = tf_listener.lookupTransform("/base_link", "/" + target_name, t)
+        bl_to_pta_rotation = tf.transformations.euler_from_quaternion(bl_to_pta_quat)
+
+        # Path to new yaw goal and loop, otherwise proceed to scan
+        print("Yaw goal error: " + str(bl_to_pta_rotation[2]))
+        if abs(bl_to_pta_rotation[2]) > error_threshold:
+            print("Did not make it to the goal - trying again")
+            t = tf_listener.getLatestCommonTime("/map", "/base_link")
+            new_target_pos, _ = tf_listener.lookupTransform("/map", "/base_link", t)
+            #t = tf_listener.getLatestCommonTime("/map", "/base_link_temp")
+            #_, new_target_quat = tf_listener.lookupTransform("/map", "/base_link_temp", t)
+            local_target.orientation = target_point.orientation
+            local_target.position = geometry_msgs.msg.Point(*new_target_pos)
+            error_threshold += 0.005
+        else:
+            print("Made it to the goal - continuing")
+            reached_destination = True
+
+        
+    return move_base_client.get_result()
 
 
 def scan(num_targets):
@@ -150,8 +168,8 @@ def scan(num_targets):
 
 def startup():
     global state, state_pub, dmtx_count_pub
-    global april_tag, map2odom_broadcaster, tf_listener, move_base_client
-    global point_a, point_b, point_c, point_home
+    global april_tag, tf_broadcaster, tf_listener, move_base_client
+    global points
 
     # The startup state is special - and is published inside of the state.
     state_pub = rospy.Publisher('/robot_state', String, latch=True, queue_size=5)
@@ -165,16 +183,20 @@ def startup():
     april_tag = apriltag_odom.apriltag_odom(5, "/back/imx390/camera_info", "/back/imx390/image_raw_rgb", "imx390_rear_temp_optical", "apriltag21")
 
     # Populate points for the demo:
-    point_a = read_point_file("A")
-    point_b = read_point_file("B")
-    point_c = read_point_file("C")
-    point_home = read_point_file("HOME")
-    print(point_a)
+    points["point_a"] = read_point_file("A")
+    points["point_b"] = read_point_file("B")
+    points["point_c"]  = read_point_file("C")
+    points["home"]  = read_point_file("HOME")
 
     tf_listener = tf.TransformListener()
-    map2odom_broadcaster = tf2_ros.StaticTransformBroadcaster()
-    static_transformStamped = setup_static_transform("map", "odom", [0.,0.,0.], [0.,0.,0.,1.])
-    map2odom_broadcaster.sendTransform(static_transformStamped)
+    tf_broadcaster = tf_broadcast_helper()
+
+    # We have delays between the broadcasts because if you don't you end up losing all but the last broadcast.
+    for point in points:
+        tf_broadcaster.broadcast_transform_pose("map", point, points[point])
+        rospy.sleep(0.5)
+
+    tf_broadcaster.broadcast_transform("map", "odom", [0.,0.,0.], [0.,0.,0.,1.])
 
     # The move base wait MUST happen after the transform is published
     rospy.loginfo("Waiting for move-base to come online")
@@ -185,11 +207,12 @@ def startup():
         rospy.loginfo("Waiting for PC to connect")
         while(state_pub.get_num_connections() == 0):
             pass
+    localize()
 
 def done():
     global state
     rospy.loginfo(state)
-    rospy.sleep(3)
+    exit(0)
 
 def read_point_file(point_name):
     filename = "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"
@@ -222,24 +245,6 @@ def read_point_file(point_name):
 
     return result_pose
 
-# Given a postiion & rotation (in quats) - returns a TransformStamped - ready for publishing
-def setup_static_transform(source, target, position, quaternion):
-    static_transformStamped = geometry_msgs.msg.TransformStamped()
-
-    static_transformStamped.header.stamp = rospy.Time.now()
-    static_transformStamped.header.frame_id = source
-    static_transformStamped.child_frame_id = target
-
-    static_transformStamped.transform.translation.x = position[0]
-    static_transformStamped.transform.translation.y = position[1]
-    static_transformStamped.transform.translation.z = position[2]
-
-    static_transformStamped.transform.rotation.x = quaternion[0]
-    static_transformStamped.transform.rotation.y = quaternion[1]
-    static_transformStamped.transform.rotation.z = quaternion[2]
-    static_transformStamped.transform.rotation.w = quaternion[3]
-    return static_transformStamped
-
 if __name__ == '__main__':
     try:
         state = RobotState.STARTUP
@@ -251,7 +256,7 @@ if __name__ == '__main__':
             rospy.loginfo("Publishing state: " + state.name)
             state_pub.publish(state.name)
             process_state(state)
-            rospy.sleep(0.5)
+            #rospy.sleep(0.5)
             state = state.next()
 
     except rospy.ROSInterruptException:
