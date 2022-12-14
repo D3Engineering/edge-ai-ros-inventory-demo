@@ -18,6 +18,9 @@ from d3_inventory_demo.tf_broadcast_helper import tf_broadcast_helper
 from d3_inventory_demo.path import set_target_position, pose_to_goal
 from d3_apriltag import apriltag_odom
 
+POINT_FILE_PATH = ""
+OBJECTIVE_FILE_PATH = ""
+
 WAIT_FOR_PC = False
 
 num_targets_a = 1
@@ -25,6 +28,7 @@ num_targets_b = 1
 num_targets_c = 1
 
 # Points are populated during the startup routine
+objectives = []
 points = {}
 state = None
 
@@ -119,7 +123,9 @@ def drive(target_name):
     # Technically this code can stay - drive to the goal position
     local_target = target_point
     reached_destination = False
-    error_threshold = 0.02
+    pos_err_thresh = 0.1
+    yaw_err_thresh = 0.02
+    # debug - remove later
     while not reached_destination:
         goal = pose_to_goal(local_target)
 
@@ -136,25 +142,50 @@ def drive(target_name):
 
         # Measure YAW offset between BLT and BL, must be less than 0.01 radians
         t = tf_listener.getLatestCommonTime("/base_link", "/" + target_name)
-        bl_to_pta, bl_to_pta_quat = tf_listener.lookupTransform("/base_link", "/" + target_name, t)
-        bl_to_pta_rotation = tf.transformations.euler_from_quaternion(bl_to_pta_quat)
+        bl_to_pt, bl_to_pt_quat = tf_listener.lookupTransform("/base_link", "/" + target_name, t)
+        bl_to_pt_rotation = tf.transformations.euler_from_quaternion(bl_to_pt_quat)
+
+        x_err = bl_to_pt[0]
+        y_err = bl_to_pt[1]
+        yaw_err = bl_to_pt_rotation[2]
+
+        print("X,Y error: (" + str(x_err) + ", " + str(y_err) + ")")
+        print("Yaw error: " + str(yaw_err))
+        print("X,Y threshold: " + str(pos_err_thresh))
+        print("Yaw threshold: " + str(yaw_err_thresh))
+
+        fix_position = False
+        fix_orientation = False
+        # If X error is behind us, we don't want the robot to go in circles.  Cut our losses and keep the current position.
+        if (abs(x_err) > pos_err_thresh) or (abs(y_err) > pos_err_thresh) and x_err > 0:
+            fix_position = True
+            pos_err_thresh += 0.05
+
+        if abs(yaw_err) > yaw_err_thresh:
+            fix_orientation = True
+            yaw_err_thresh += 0.01
+
+        t = tf_listener.getLatestCommonTime("/map", "/base_link")
+        current_position, current_orientation = tf_listener.lookupTransform("/map", "/base_link", t)
+        if fix_orientation:
+            local_target.orientation = target_point.orientation
+        else:
+            local_target.orientation = geometry_msgs.msg.Quaternion(*current_orientation)
+
+        if fix_position:
+            local_target.position = target_point.position
+        else:
+            local_target.position = geometry_msgs.msg.Point(*current_position)
 
         # Path to new yaw goal and loop, otherwise proceed to scan
-        print("Yaw goal error: " + str(bl_to_pta_rotation[2]))
-        if abs(bl_to_pta_rotation[2]) > error_threshold:
+        if fix_position or fix_orientation:
             print("Did not make it to the goal - trying again")
-            t = tf_listener.getLatestCommonTime("/map", "/base_link")
-            new_target_pos, _ = tf_listener.lookupTransform("/map", "/base_link", t)
-            #t = tf_listener.getLatestCommonTime("/map", "/base_link_temp")
-            #_, new_target_quat = tf_listener.lookupTransform("/map", "/base_link_temp", t)
-            local_target.orientation = target_point.orientation
-            local_target.position = geometry_msgs.msg.Point(*new_target_pos)
-            error_threshold += 0.005
+            print("Fix Orientation? " + str(fix_orientation))
+            print("Fix Position? " + str(fix_position))
         else:
             print("Made it to the goal - continuing")
             reached_destination = True
 
-        
     return move_base_client.get_result()
 
 
