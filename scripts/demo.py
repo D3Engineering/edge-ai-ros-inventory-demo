@@ -102,6 +102,7 @@ def localize():
 
     # Publish result in map->odom transform - static transform 
     tf_broadcaster.broadcast_transform("map", "odom", map2odom_pos, map2odom_quat)
+    rospy.sleep(0.01)
 
 # Given a target point we will create and send a goal to move_base,
 # then wait for the robot to reach that goal.
