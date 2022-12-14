@@ -5,29 +5,28 @@ import tf
 import actionlib
 import json
 import tf2_ros
-
 import numpy as np
 import geometry_msgs
+
 from scipy.spatial.transform import Rotation as R
 
 from std_msgs.msg import String, Int32
 from geometry_msgs.msg import Quaternion,Point,Pose
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+
+from d3_inventory_demo.objective import Objective
 from d3_inventory_demo.robot_state import RobotState
 from d3_inventory_demo.tf_broadcast_helper import tf_broadcast_helper
 from d3_inventory_demo.path import set_target_position, pose_to_goal
 from d3_apriltag import apriltag_odom
 
-POINT_FILE_PATH = ""
-OBJECTIVE_FILE_PATH = ""
+POINT_FILE_PATH = "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"
+OBJECTIVE_FILE_PATH = "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"
 
 WAIT_FOR_PC = False
 
-num_targets_a = 1
-num_targets_b = 1
-num_targets_c = 1
-
-# Points are populated during the startup routine
+# Points & objectives are populated during the startup routine
+# Each objective must have a matching point[objective.name]
 objectives = []
 points = {}
 state = None
@@ -40,34 +39,22 @@ state_pub = None
 dmtx_count_pub = None
 april_tag = None
 
-def process_state(current_state):
+def process_state(current_state, current_objective):
     # START
+    if state_pub is not None:
+        rospy.loginfo("Publishing state: " + state.name)
+        state_pub.publish(state.name)
+
     if state is RobotState.STARTUP:
         startup()
-
-    # SHELF A:
-    elif state is RobotState.DRIVING_A:
-        drive("point_a")
-    elif state is RobotState.SCANNING_A:
-        scan(num_targets_a)
-
-    # SHELF B:
-    elif state is RobotState.DRIVING_B:
-        drive("point_b")
-    elif state is RobotState.SCANNING_B:
-        scan(num_targets_b)
-
-    # SHELF C:
-    elif state is RobotState.DRIVING_C:
-        drive("point_c")
-    elif state is RobotState.SCANNING_C:
-        scan(num_targets_c)
-
-    # DRIVE HOME
-    elif state is RobotState.DRIVING_HOME:
-        drive("home")
-
-    # DONE
+    elif state is RobotState.DRIVE:
+        drive(current_objective.name)
+    elif state is RobotState.SCAN:
+        scan(1)
+    elif state is RobotState.TRACK:
+        none()
+    elif state is RobotState.NONE:
+        none()
     elif state is RobotState.DONE:
         done()
 
@@ -110,7 +97,7 @@ def localize():
 
 # Given a target point we will create and send a goal to move_base,
 # then wait for the robot to reach that goal.
-def drive(target_name):
+def drive(target_name, precise = True):
     global state, points
     target_point = points[target_name]
     rospy.loginfo(state)
@@ -123,7 +110,7 @@ def drive(target_name):
     # Technically this code can stay - drive to the goal position
     local_target = target_point
     reached_destination = False
-    pos_err_thresh = 0.1
+    pos_err_thresh = 0.075
     yaw_err_thresh = 0.02
     # debug - remove later
     while not reached_destination:
@@ -178,7 +165,7 @@ def drive(target_name):
             local_target.position = geometry_msgs.msg.Point(*current_position)
 
         # Path to new yaw goal and loop, otherwise proceed to scan
-        if fix_position or fix_orientation:
+        if fix_position or fix_orientation and precise:
             print("Did not make it to the goal - trying again")
             print("Fix Orientation? " + str(fix_orientation))
             print("Fix Position? " + str(fix_position))
@@ -189,7 +176,7 @@ def drive(target_name):
     return move_base_client.get_result()
 
 
-def scan(num_targets):
+def scan(num_targets = 1):
     global state, WAIT_FOR_PC
     rospy.loginfo(state)
     dmtx_count_pub.publish(num_targets)
@@ -201,7 +188,7 @@ def scan(num_targets):
 def startup():
     global state, state_pub, dmtx_count_pub
     global april_tag, tf_broadcaster, tf_listener, move_base_client
-    global points
+    global points, objectives
 
     # The startup state is special - and is published inside of the state.
     state_pub = rospy.Publisher('/robot_state', String, latch=True, queue_size=5)
@@ -214,11 +201,9 @@ def startup():
     # Set up apriltag for localization
     april_tag = apriltag_odom.apriltag_odom(5, "/back/imx390/camera_info", "/back/imx390/image_raw_rgb", "imx390_rear_temp_optical", "apriltag21")
 
-    # Populate points for the demo:
-    points["point_a"] = read_point_file("A")
-    points["point_b"] = read_point_file("B")
-    points["point_c"]  = read_point_file("C")
-    points["home"]  = read_point_file("HOME")
+    # Populate points && objectives for the demo:
+    points = Objective.read_point_file(POINT_FILE_PATH)
+    objectives = Objective.read_objective_file(OBJECTIVE_FILE_PATH)
 
     tf_listener = tf.TransformListener()
     tf_broadcaster = tf_broadcast_helper()
@@ -239,58 +224,31 @@ def startup():
         rospy.loginfo("Waiting for PC to connect")
         while(state_pub.get_num_connections() == 0):
             pass
+
     localize()
+
+def none():
+    global state
+    rospy.loginfo(state)
 
 def done():
     global state
     rospy.loginfo(state)
     exit(0)
 
-def read_point_file(point_name):
-    filename = "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"
-
-    # Read from file
-    with open(filename) as f:
-        data = f.read()
-
-    js = json.loads(data)
-
-    # Convert to pose
-    result_pose = Pose()
-    if point_name not in js.keys():
-        return None
-
-    if "orientation" not in js[point_name].keys():
-        return None
-
-    if "position" not in js[point_name].keys():
-        return None
-
-    result_pose.orientation.x = js[point_name]["orientation"]["x"]
-    result_pose.orientation.y = js[point_name]["orientation"]["y"]
-    result_pose.orientation.z = js[point_name]["orientation"]["z"]
-    result_pose.orientation.w = js[point_name]["orientation"]["w"]
-
-    result_pose.position.x = js[point_name]["position"]["x"]
-    result_pose.position.y = js[point_name]["position"]["y"]
-    result_pose.position.z = js[point_name]["position"]["z"]
-
-    return result_pose
-
 if __name__ == '__main__':
     try:
         state = RobotState.STARTUP
         rospy.init_node('d3_inventory_controller')
 
-        process_state(state)
-        state = state.next()
+        process_state(state, None)
         while not rospy.is_shutdown():
-            rospy.loginfo("Publishing state: " + state.name)
-            state_pub.publish(state.name)
-            process_state(state)
-            #rospy.sleep(0.5)
-            state = state.next()
+            for obj in objectives:
+                state = RobotState.DRIVE
+                process_state(state, obj)
+                state = obj.action
+                process_state(state, obj)
 
     except rospy.ROSInterruptException:
-        rospy.loginfo("Navigation test finished.")
+        rospy.loginfo("Navigation interrupted.")
 

@@ -1,0 +1,27 @@
+{
+  "home": {
+    "sequence": 4,
+    "action": "DONE",
+    "action_info": "N/A"
+  },
+  "point_a": {
+    "sequence": 0,
+    "action": "SCAN",
+    "action_info": "N/A"
+  },
+  "point_b": {
+    "sequence": 1,
+    "action": "SCAN",
+    "action_info": "N/A"
+  },
+  "point_c": {
+    "sequence": 2,
+    "action": "SCAN",
+    "action_info": "N/A"
+  },
+  "crowd": {
+    "sequence": 5,
+    "action": "TRACK",
+    "action_info": "N/A"
+  }
+}
