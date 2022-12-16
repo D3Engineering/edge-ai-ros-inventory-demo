@@ -43,24 +43,26 @@ def process_state(current_state, current_objective):
     # START
     if state_pub is not None:
         rospy.loginfo("Publishing state: " + state.name)
+        rospy.loginfo("Objective: " + current_objective.name)
         state_pub.publish(state.name)
 
     if state is RobotState.STARTUP:
         startup()
     elif state is RobotState.DRIVE:
-        drive(current_objective.name)
+        drive(current_objective.name, current_objective.precise_goal)
     elif state is RobotState.SCAN:
-        scan(1)
+        scan(current_objective.action_info["number_targets"])
     elif state is RobotState.TRACK:
-        none()
-    elif state is RobotState.NONE:
-        none()
+        track(current_objective.action_info["duration"])
+    elif state is RobotState.NOOP:
+        nothing()
     elif state is RobotState.DONE:
         done()
 
 # This state is likely mis-named.  It is actually the
 # step where we re-calculate localization.
 def localize():
+    rospy.loginfo("Localizing...")
     # Run april-tag detection code to determine robot position
     current_pose = april_tag.get_pose()
     rospy.sleep(0.01)
@@ -99,6 +101,9 @@ def localize():
 # then wait for the robot to reach that goal.
 def drive(target_name, precise = True):
     global state, points
+    if target_name not in points.keys():
+        raise ValueError("Error - pathing to point that does not exist")
+
     target_point = points[target_name]
     rospy.loginfo(state)
     rospy.loginfo("target:" + str(target_point))
@@ -165,7 +170,7 @@ def drive(target_name, precise = True):
             local_target.position = geometry_msgs.msg.Point(*current_position)
 
         # Path to new yaw goal and loop, otherwise proceed to scan
-        if fix_position or fix_orientation and precise:
+        if (fix_position or fix_orientation) and precise:
             print("Did not make it to the goal - trying again")
             print("Fix Orientation? " + str(fix_orientation))
             print("Fix Position? " + str(fix_position))
@@ -199,11 +204,16 @@ def startup():
     rospy.loginfo(state)
 
     # Set up apriltag for localization
-    april_tag = apriltag_odom.apriltag_odom(5, "/back/imx390/camera_info", "/back/imx390/image_raw_rgb", "imx390_rear_temp_optical", "apriltag21")
+    april_tag = apriltag_odom.apriltag_odom(3, "/back/imx390/camera_info", "/back/imx390/image_raw_rgb", "imx390_rear_temp_optical", "apriltag21")
 
     # Populate points && objectives for the demo:
     points = Objective.read_point_file(POINT_FILE_PATH)
     objectives = Objective.read_objective_file(OBJECTIVE_FILE_PATH)
+    for obj in objectives:
+        if obj.name not in points.keys():
+            raise ValueError("WARNING: Objective " + obj.name + " has no corresponding point - removing...")
+            objectives.remove(obj)
+
 
     tf_listener = tf.TransformListener()
     tf_broadcaster = tf_broadcast_helper()
@@ -227,7 +237,12 @@ def startup():
 
     localize()
 
-def none():
+def track(duration):
+    global state
+    rospy.loginfo(state)
+    rospy.sleep(duration)
+
+def nothing():
     global state
     rospy.loginfo(state)
 

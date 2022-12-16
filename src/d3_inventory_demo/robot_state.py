@@ -6,6 +6,7 @@ class RobotState(Enum):
     DRIVE = auto()
     SCAN = auto()
     TRACK = auto()
+    NOOP = auto()
     DONE = auto()
 
     @classmethod

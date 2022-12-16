@@ -3,15 +3,14 @@ from geometry_msgs.msg import Quaternion,Point,Pose
 from d3_inventory_demo.robot_state import RobotState
 
 class Objective():
-    def __init__(self, name, sequence, action, action_info):
+    def __init__(self, name, sequence, action, action_info, precise_goal = True):
         self.name = name 
         self.sequence = sequence
-        # Crappy way to do this - but check if the enum exists
         if not RobotState.exists(action):
-            print("ERROR - Action " + action + " doesn't exist in Robot State")
-            raise ValueError
+            raise ValueError("ERROR - Action " + action + " doesn't exist in Robot State")
         self.action = RobotState[action]
         self.action_info = action_info
+        self.precise_goal = precise_goal
 
     def __repr__(self):
         return f'Objective(name={self.name}, sequence={self.sequence}, action={self.action}, action_info={self.action_info})'

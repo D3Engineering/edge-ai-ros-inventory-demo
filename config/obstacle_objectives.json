@@ -1,0 +1,23 @@
+{
+  "point_a": {
+    "sequence": 2,
+    "action": "DONE",
+    "precise_goal": false,
+    "action_info": {
+    }
+  },
+  "point_b": {
+    "sequence": 5,
+    "action": "NOOP",
+    "precise_goal": false,
+    "action_info": {
+    }
+  },
+  "point_c": {
+    "sequence": 1,
+    "action": "NOOP",
+    "precise_goal": false,
+    "action_info": {
+    }
+  }
+}
