@@ -26,7 +26,7 @@ OBJECTIVE_FILE_PATH = "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/o
 WAIT_FOR_PC = False
 
 # Points & objectives are populated during the startup routine
-# Each objective must have a matching point[objective.name]
+# Each objective must have a matching point[objective.point_name]
 objectives = []
 points = {}
 state = None
@@ -148,8 +148,9 @@ def drive(target_name, precise = True):
 
         fix_position = False
         fix_orientation = False
-        # If X error is behind us, we don't want the robot to go in circles.  Cut our losses and keep the current position.
-        if (abs(x_err) > pos_err_thresh) or (abs(y_err) > pos_err_thresh) and x_err > 0:
+        # Check if it's within it's close to it's xy goal after localizing.  If it's not, correct it
+        # If the robot drove past it's target point, only drive backwards if it's way past the point.
+        if ((abs(x_err) > pos_err_thresh) or (abs(y_err) > pos_err_thresh)) and (x_err > 0 or abs(x_err) > 2 * pos_err_thresh):
             fix_position = True
             pos_err_thresh += 0.05
 
@@ -250,7 +251,7 @@ def nothing():
 def done():
     global state
     rospy.loginfo(state)
-    exit(0)
+    input("PRESS ENTER TO CONTINUE")
 
 if __name__ == '__main__':
     try:

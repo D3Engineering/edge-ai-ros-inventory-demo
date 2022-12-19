@@ -1,8 +1,10 @@
 <!-- XML -->
 <launch>
+    <!--
+    <include file="$(find d3_motorctl)/launch/motor.launch"/>
+    <include file="$(find d3_motorctl)/launch/odom.launch"/>
+    -->
     <include file="$(find d3_inventory_demo)/launch/demo_cameras.launch"/>
-    <!--<include file="$(find d3_motorctl)/launch/motor.launch"/>
-    <include file="$(find d3_motorctl)/launch/odom.launch"/>-->
     <include ns="drive" file="$(find scuttle_driver)/launch/scuttle_driver.launch"/>
     <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen"/>
     <include file="$(find d3_2dnav)/launch/move_base.launch"/>
