@@ -11,23 +11,27 @@
         <arg name="framelimit"          value="false"/>
         <arg name="command_port"        value="/dev/frontradarcontrol"/>
         <arg name="data_port"           value="/dev/frontradardata"/>
+        <arg name="frame_id" value="front_radar"/>
     </include>
 
-    <include ns="drive" file="$(find scuttle_driver)/launch/scuttle_driver.launch"/>
+    <include file="$(find d3_fusion)/launch/radar.launch" ns="left">
+        <arg name="command_port" value="/dev/leftradarcontrol"/>
+        <arg name="data_port" value="/dev/leftradardata"/>
+        <arg name="frame_id" value="left_radar"/>
+    </include>
+
+    <include file="$(find d3_fusion)/launch/radar.launch" ns="right">
+        <arg name="command_port" value="/dev/rightradarcontrol"/>
+        <arg name="data_port" value="/dev/rightradardata"/>
+        <arg name="frame_id" value="right_radar"/>
+    </include>
+
     <!--
     <include file="$(find d3_motorctl)/launch/motor.launch"/>
     <include file="$(find d3_motorctl)/launch/odom.launch"/>
     -->
-
+    <include ns="drive" file="$(find scuttle_driver)/launch/scuttle_driver.launch"/>
     <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen"/>
     <include file="$(find d3_2dnav)/launch/move_base.launch"/>
-
-    <!-- [ACTIVE] rear camera pointed up, aligned per ROS REP 103 -->
-    <node pkg="tf" type="static_transform_publisher" name="map_to_apriltag21" args="0 0 2.47 0 0 3.14159 map apriltag21 100" />
-    <node pkg="tf" type="static_transform_publisher" name="imx390_rear_temp_to_base_link_temp" args="0 0.125 0 1.57079 0 0 imx390_rear_temp_optical base_link_temp 100" />
-
-    <!--
-    <node pkg="tf" type="static_transform_publisher" name="base_link_to_imx390_rear" args="-0.125 0 0 0 -1.57079 0 base_link imx390_rear_optical 100" />
-    -->
+    <include file="$(find d3_inventory_demo)/launch/robot_tf.launch"/>
 </launch>
-
