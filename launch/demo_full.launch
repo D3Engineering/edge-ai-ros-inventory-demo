@@ -1,14 +1,18 @@
 <!-- XML -->
 <launch>
     <include file="$(find d3_inventory_demo)/launch/demo_cameras.launch"/>
+    <include ns="drive" file="$(find scuttle_driver)/launch/scuttle_driver.launch"/>
+    <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen"/>
+    <include file="$(find d3_2dnav)/launch/move_base.launch"/>
+
     <include file="$(find d3_fusion)/launch/fusion.launch" ns="front">
         <arg name="device"              value="/dev/imx390-0-3"/>
-        <arg name="ldc_dcc_file"        value="/opt/imaging/imx390/imx390_35244_equidistant_1280x720_LUT.bin"/>
-        <arg name="camera_info_url"     value="file:///opt/imaging/imx390/imx390_35244_equidistant_1280x720_rect.yml"/>
-        <arg name="width"               value="1280"/>
-        <arg name="height"              value="720"/>
-        <arg name="framerate"           value="30"/>
-        <arg name="framelimit"          value="false"/>
+        <arg name="ldc_dcc_file"        value="/opt/imaging/imx390/robotcam3_equidistant_960x540_LUT.bin"/>
+        <arg name="camera_info_url"     value="file:///opt/imaging/imx390/robotcam3_equidistant_960x540_rect.yml"/>
+        <arg name="width"               value="960"/>
+        <arg name="height"              value="540"/>
+        <arg name="framerate"           value="15"/>
+        <arg name="framelimit"          value="true"/>
         <arg name="command_port"        value="/dev/frontradarcontrol"/>
         <arg name="data_port"           value="/dev/frontradardata"/>
         <arg name="frame_id" value="front_radar"/>
@@ -30,8 +34,5 @@
     <include file="$(find d3_motorctl)/launch/motor.launch"/>
     <include file="$(find d3_motorctl)/launch/odom.launch"/>
     -->
-    <include ns="drive" file="$(find scuttle_driver)/launch/scuttle_driver.launch"/>
-    <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen"/>
-    <include file="$(find d3_2dnav)/launch/move_base.launch"/>
     <include file="$(find d3_inventory_demo)/launch/robot_tf.launch"/>
 </launch>

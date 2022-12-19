@@ -94,13 +94,13 @@ If obstacle avoidance is not working, run this launch file: (TODO)
 
 ## Advanced configuration
 
-Below is not necessary to get the demo online, but if you want to change
+Below is configuration that is not necessary to get the demo online, but if you want to change
 how the demo works at all, this section may help you.
 
 ### Changing demo objectives
 
 The demo works by having "objectives" that it accomplishes at particular waypoints. By default, it will read the objectives.json file
-and the points.json file, then figure out at what points the objectives need to happen.  Below is an example of the configuration file:
+and the points.json file, then figure out at what points the objectives need to happen. Below is an example of the configuration file:
 
 ```
 {
@@ -153,3 +153,4 @@ The rest of the fields mean the following:
   * TRACK: Requires field "duration" - how long it will sit there before moving on to the next objective
   * NOOP: No fields are used
   * DONE: No fields are used
+
