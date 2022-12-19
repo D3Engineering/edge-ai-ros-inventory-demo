@@ -41,15 +41,15 @@ april_tag = None
 
 def process_state(current_state, current_objective):
     # START
-    if state_pub is not None:
+    if state_pub is not None or current_state is RobotState.NOOP:
         rospy.loginfo("Publishing state: " + state.name)
         rospy.loginfo("Objective: " + current_objective.name)
-        state_pub.publish(state.name)
+        state_pub.publish(current_objective.name + "|" + state.name)
 
     if state is RobotState.STARTUP:
         startup()
     elif state is RobotState.DRIVE:
-        drive(current_objective.name, current_objective.precise_goal)
+        drive(current_objective.point_name, current_objective.precise_goal)
     elif state is RobotState.SCAN:
         scan(current_objective.action_info["number_targets"])
     elif state is RobotState.TRACK:
@@ -199,8 +199,9 @@ def startup():
     state_pub = rospy.Publisher('/robot_state', String, latch=True, queue_size=5)
     dmtx_count_pub = rospy.Publisher('/dmtx_count', Int32, latch=True, queue_size=5)
 
-    # Broadcast state information
-    state_pub.publish(state.name)
+    # Broadcast state information - The visualizer expects "OBJECTIVE | STATE"
+    # but since we're starting up we have no objective yet.
+    state_pub.publish(state.name + "|" + state.name)
     rospy.loginfo(state)
 
     # Set up apriltag for localization
@@ -210,8 +211,8 @@ def startup():
     points = Objective.read_point_file(POINT_FILE_PATH)
     objectives = Objective.read_objective_file(OBJECTIVE_FILE_PATH)
     for obj in objectives:
-        if obj.name not in points.keys():
-            raise ValueError("WARNING: Objective " + obj.name + " has no corresponding point - removing...")
+        if obj.point_name not in points.keys():
+            raise ValueError("WARNING: Objective '" + obj.name + "' has no corresponding point named '" + obj.point_name + "' - removing...")
             objectives.remove(obj)
 
 

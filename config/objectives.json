@@ -1,34 +1,39 @@
 {
-  "home": {
+  "Home": {
     "sequence": 6,
+    "point_name": "home",
     "action": "DONE",
     "precise_goal": false,
     "action_info": {}
   },
-  "point_a": {
+  "Shelf A": {
     "sequence": 0,
+    "point_name": "point_a",
     "action": "SCAN",
     "action_info": {
       "number_targets": 1
     }
   },
-  "point_b": {
+  "Shelf B": {
     "sequence": 1,
+    "point_name": "point_b",
     "action": "SCAN",
     "action_info": {
       "number_targets": 1
     }
   },
-  "point_c": {
+  "Shelf C": {
     "sequence": 2,
+    "point_name": "point_c",
     "action": "SCAN",
     "precise_goal": true,
     "action_info": {
       "number_targets": 1
     }
   },
-  "crowd": {
+  "the Audience": {
     "sequence": 5,
+    "point_name": "crowd",
     "action": "TRACK",
     "action_info": {
       "duration": 3

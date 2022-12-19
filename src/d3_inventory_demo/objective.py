@@ -3,8 +3,12 @@ from geometry_msgs.msg import Quaternion,Point,Pose
 from d3_inventory_demo.robot_state import RobotState
 
 class Objective():
-    def __init__(self, name, sequence, action, action_info, precise_goal = True):
-        self.name = name 
+    def __init__(self, name, sequence, action, action_info, point_name = None, precise_goal = True):
+        self.name = name
+        if point_name is None:
+            self.point_name = name.lower()
+        else:
+            self.point_name = point_name.lower()
         self.sequence = sequence
         if not RobotState.exists(action):
             raise ValueError("ERROR - Action " + action + " doesn't exist in Robot State")
@@ -13,7 +17,7 @@ class Objective():
         self.precise_goal = precise_goal
 
     def __repr__(self):
-        return f'Objective(name={self.name}, sequence={self.sequence}, action={self.action}, action_info={self.action_info})'
+        return f'Objective(name={self.name}, sequence={self.sequence}, action={self.action}, action_info={self.action_info}, point_name={self.point_name}, precise_goal={self.precise_goal})'
 
     @staticmethod
     def read_objective_file(filename):
