@@ -79,16 +79,24 @@ Assuming you've calibrated the device - run the demo:
 
 ###### WARNING:
 
-`demo_full.launch` has issues being run a second time.  This has to do with the front facing camera - I don't fully understand it.
+`d3_inventory_demo demo_full.launch` has issues being run a second time.  This has to do with the front facing camera - I don't fully understand it.
 
 If you're just testing the demo and you don't care about the front-facing camera, run this launch file: (TODO)
 
-If obstacle avoidance is not working, run this launch file: (TODO)
+If obstacle avoidance is not working, run this launch file: `d3_inventory_demo demo.launch`
 
 
 ### Visualizing the demo
 
-(Notes from seth on how to run the visualizer)
+To run the visualizer, do the following:
+
+1. Turn on the Visualizer PC and connect to the network
+2. Open a Terminal (Ctrl+Alt+T)
+3. Run the command `~/j7ros_home/pc_docker_run.sh`
+4. Wait for Docker to Start
+5. Run the command `source devel/setup.bash`
+6. Once the `roscore` has been launched on the Robot, run `roslaunch d3_inv_viz inventory_viz.launch` on the Visualizer PC
+7. The Visualizer should appear. If it does not, check the console for errors. The error `unable to contact ROS master` means that the Robot was unreachable. Check that you can ping the robot at `192.168.50.200` and relaunch the Visualizer. Other error messages may occur related to the window manager, they can be ignored and you can relaunch the Visualizer
 
 ## Advanced configuration
 
