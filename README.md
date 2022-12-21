@@ -152,6 +152,7 @@ Each objective starts with its display name (this is what is displayed on the Vi
 The rest of the fields mean the following:
 
 * `sequence`: Used to order objectives.  The lowest sequence number will be run first, the last sequence number will be run last
+* `point_name`: The name of the point that will be used as a waypoint.  If left empty - it will default it will use the name of the objective.
 * `action`: what to do when the robot has reached the waypoint.  Below are the following options:
   * `NOOP`: Do nothing when you get there
   * `SCAN`: Scan the datamatrix tags from the left camera
@@ -165,3 +166,7 @@ The rest of the fields mean the following:
   * `NOOP`: No fields are used
   * `DONE`: No fields are used
 
+
+WARNING: each objective MUST HAVE A CORRESPONDING POINT - if it doesn't then the demo will crash and raise the following error:
+`"WARNING: Objective '" + obj.name + "' has no corresponding point named '" + obj.point_name + "' - removing..."`
+ This means you need to either: add a point to points.json via calibration, fix the corresponding point name in the objective, or remove the objective
