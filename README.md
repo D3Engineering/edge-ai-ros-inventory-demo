@@ -2,9 +2,6 @@
 
 ## Getting Started
 
-This guide assumes that you have a ROS1 docker container with all of the necessary demo code installed.
-If that is not the case, please follow _TODO: this guide._
-
 To log in to the robot, set up the wireless router and log in over SSH:
 
 ```
@@ -24,15 +21,22 @@ login: root
 We have a Router, Robot, and Host PC that have been prepared to work out of the box. To begin, do the following:
 1. Plug in the Router, and turn it on. If needed, the Network Credentials are on a white tag tied to the Router
 2. Turn on the Host PC. It should automatically connect and pull the IP `192.168.50.50`
-3. Turn on the Robot. It should automatically connect and pull the IP `192.168.50.200`. If the robot does not connect, you'll need to use the scripts in `/usr/share/intel9260/` to get reconnected. Steps to do so are as follows:
+3. Turn on the Robot. It should automatically connect and pull the IP `192.168.50.200`. If the robot does not connect, you'll need to use the scripts in `/usr/share/intel9260/` to get reconnected. Steps to reconnect are as follows:
    1. `cd /usr/share/intel9260/`
    2. `./sta_stop.sh`
    3. `./sta_start.sh`
    4. `./sta_connect-ex.sh <SSID> WPA-PSK <Password>` where `<SSID>` is replaced with the SSID, and `<Password>` is replaced with the Password from the Network Credentials tag
 
-### Calibrating the Scene
+### Charging Batteries
 
-(TODO - READ ME AND DETERMINE MY ACCURACY)
+Each set of batteries should only be used for 1 (conservative estimate) hour at a time, in order to prevent over-discharging. Once this 1-hour cycle is complete, you will want to charge the used batteries.
+To charge the batteries, follow the process below:
+1. Plug in the charger, and flick the switch on the back left to the on position.
+2. Plug the batteries into the charger with both sets of cables connected.
+3. On the screen, select `CH1` in the top left, then `MEMORY`, then `START`. Repeat this process for `CH2` in the top right.
+4. A series of 4 different tones should play, and a graph should appear showing the charge over time. If it doesn't, and you get an alarm tone after the initial tones, check the `MONITOR` tab for the battery. If the cells are unbalanced, you can try the `BALANCE` button, or go to the home screen and select `LiPo`, then `STORAGE` and `START` - either of these should balance the cells, allowing you to then follow Step 3 to charge them to capacity.
+
+### Calibrating the Scene
 
 First the AprilTag must be placed above the ground, level and parallel to the floor, face down.
 Then, measure the distance (in meters) from the face of the AprilTag to the floor.
@@ -72,7 +76,7 @@ Currently, the demo objectives are configured for the following points, in order
 * `crowd`
 
 Use these point names if you don't want to edit the objectives file. Continue placing the robot at the
-desired locations and saving the pose until you've captured all of the ones you need for your demo.
+desired locations and saving the pose until you've captured all the ones you need for your demo.
 
 
 Note: you may re-calibrate any individual point as long as it successfully saves the file.
@@ -82,7 +86,7 @@ Note: you may re-calibrate any individual point as long as it successfully saves
 If you are not already in the docker container you must launch it:
 `/home/root/j7ros_home/tda4_docker_run.sh`
 
-You'll want to run a roscore so when the demo _invariably crashes_, your visualizer doesn't:
+You'll want to run a `roscore` so when the demo potentially crashes, your visualizer doesn't:
 `roscore &`
 
 Assuming you've calibrated the device - run the demo:
@@ -92,9 +96,7 @@ Assuming you've calibrated the device - run the demo:
 
 `d3_inventory_demo demo_full.launch` has issues being run a second time.  This has to do with the front facing camera - I don't fully understand it.
 
-If you're just testing the demo and you don't care about the front-facing camera, run this launch file: (TODO)
-
-If obstacle avoidance is not working, run this launch file: `d3_inventory_demo demo.launch`
+If you're just testing the demo, and you don't care about the front-facing camera, run this launch file: `d3_inventory_demo demo.launch`
 
 
 ### Visualizing the Demo
@@ -113,7 +115,7 @@ To run the visualizer, do the following:
 4. Wait for Docker to Start
 5. Run the command `source devel/setup.bash`
 6. Once the `roscore` has been launched on the Robot, run `roslaunch d3_inv_viz inventory_viz.launch` on the Visualizer PC
-7. The Visualizer should appear. If it does not, check the console for errors. The error `unable to contact ROS master` means that the Robot was unreachable. Check that you can ping the robot at `192.168.50.200` and relaunch the Visualizer. Other error messages may occur related to the window manager (`Gdk-ERROR`/`X Window System Error`), they can be ignored and you can relaunch the Visualizer
+7. The Visualizer should appear. If it does not, check the console for errors. The error `unable to contact ROS master` means that the Robot was unreachable. Check that you can ping the robot at `192.168.50.200` and relaunch the Visualizer. Other error messages may occur related to the window manager (`Gdk-ERROR`/`X Window System Error`), they can be ignored, and you can relaunch the Visualizer
 
 ## Advanced Configuration
 
