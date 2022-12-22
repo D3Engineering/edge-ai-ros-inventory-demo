@@ -12,6 +12,9 @@
     <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen">
         <param name="point_file"        value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"/>
         <param name="objective_file"    value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"/>
+        <!-- number of poses the robot will use to estimate position during localization step -->
+        <param name="num_poses"         value="3"/>
+        <!-- Whether the robot will wait for the visualizer for scanning before continuing - set to false for testing purposes-->
         <param name="wait_for_pc"       value="True"/>
     </node>
 
