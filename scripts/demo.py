@@ -20,10 +20,9 @@ from d3_inventory_demo.tf_broadcast_helper import tf_broadcast_helper
 from d3_inventory_demo.path import set_target_position, pose_to_goal
 from d3_apriltag import apriltag_odom
 
-POINT_FILE_PATH = "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"
-OBJECTIVE_FILE_PATH = "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"
-
-WAIT_FOR_PC = True
+POINT_FILE_PATH = None
+OBJECTIVE_FILE_PATH = None
+WAIT_FOR_PC = None
 
 # Points & objectives are populated during the startup routine
 # Each objective must have a matching point[objective.point_name]
@@ -194,7 +193,6 @@ def scan(num_targets = 1):
 def startup():
     global state, state_pub, dmtx_count_pub
     global april_tag, tf_broadcaster, tf_listener, move_base_client
-    global points, objectives
 
     # The startup state is special - and is published inside of the state.
     state_pub = rospy.Publisher('/robot_state', String, latch=True, queue_size=5)
@@ -208,14 +206,7 @@ def startup():
     # Set up apriltag for localization
     april_tag = apriltag_odom.apriltag_odom(3, "/back/imx390/camera_info", "/back/imx390/image_raw_rgb", "imx390_rear_temp_optical", "apriltag21")
 
-    # Populate points && objectives for the demo:
-    points = Objective.read_point_file(POINT_FILE_PATH)
-    objectives = Objective.read_objective_file(OBJECTIVE_FILE_PATH)
-    for obj in objectives:
-        if obj.point_name not in points.keys():
-            raise ValueError("WARNING: Objective '" + obj.name + "' has no corresponding point named '" + obj.point_name + "' - removing...")
-            objectives.remove(obj)
-
+    populate_objectives()
 
     tf_listener = tf.TransformListener()
     tf_broadcaster = tf_broadcast_helper()
@@ -239,6 +230,16 @@ def startup():
 
     localize()
 
+def populate_objectives():
+    global points, objectives
+    # Populate points && objectives for the demo:
+    points = Objective.read_point_file(POINT_FILE_PATH)
+    objectives = Objective.read_objective_file(OBJECTIVE_FILE_PATH)
+    for obj in objectives:
+        if obj.point_name not in points.keys():
+            raise ValueError("WARNING: Objective '" + obj.name + "' has no corresponding point named '" + obj.point_name + "' - removing...")
+            objectives.remove(obj)
+
 def track(duration):
     global state
     rospy.loginfo(state)
@@ -258,8 +259,13 @@ if __name__ == '__main__':
         state = RobotState.STARTUP
         rospy.init_node('d3_inventory_controller')
 
+        POINT_FILE_PATH = rospy.get_param('~point_file', "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json")
+        OBJECTIVE_FILE_PATH = rospy.get_param('~objective_file', "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json")
+        WAIT_FOR_PC = rospy.get_param('~wait_for_pc', True)
+
         process_state(state, None)
         while not rospy.is_shutdown():
+            populate_objectives()
             for obj in objectives:
                 state = RobotState.DRIVE
                 process_state(state, obj)

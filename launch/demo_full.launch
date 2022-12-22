@@ -1,10 +1,18 @@
 <!-- XML -->
 <launch>
-    <include file="$(find d3_inventory_demo)/launch/demo_cameras.launch"/>
+    <!-- Movement nodes -->
     <include ns="drive" file="$(find scuttle_driver)/launch/scuttle_driver.launch"/>
-    <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen"/>
     <include file="$(find d3_2dnav)/launch/move_base.launch"/>
+    <include file="$(find d3_dlp)/launch/dlp.launch"/>
+    <!-- Demo Nodes -->
+    <include file="$(find d3_inventory_demo)/launch/demo_cameras.launch"/>
+    <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen">
+        <param name="point_file"        value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"/>
+        <param name="objective_file"    value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"/>
+        <param name="wait_for_pc"       value="True"/>
+    </node>
 
+    <!-- Fusion Node (Front camera only) -->
     <include file="$(find d3_fusion)/launch/fusion.launch" ns="front">
         <arg name="device"              value="/dev/imx390-0-3"/>
         <arg name="ldc_dcc_file"        value="/opt/imaging/imx390/robotcam3_equidistant_960x540_LUT.bin"/>
@@ -18,6 +26,7 @@
         <arg name="frame_id" value="front_radar"/>
     </include>
 
+    <!-- Radar Nodes -->
     <include file="$(find d3_fusion)/launch/radar.launch" ns="left">
         <arg name="command_port" value="/dev/leftradarcontrol"/>
         <arg name="data_port" value="/dev/leftradardata"/>
