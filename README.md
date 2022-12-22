@@ -63,7 +63,14 @@ Then run the calibration code:
 
 `roslaunch d3_apriltag point_calib.launch`
 
-It will ask you what you would like to do.
+Optionally, to view the Left Camera feed, you can open RViz on the Visualizer PC by doing the following:
+
+1. Open a Terminal (Ctrl+Alt+T) and run `~/j7ros_home/pc_docker_run.sh`
+2. Run `source devel/setup.bash`
+3. Run `rviz`
+4. Press Ctrl+O to open a new RViz Config, select `point_calib.rviz` - this will show you both the left and back camera feeds, as well as the ROS Transform Output of the Detection. This is also useful with the `getposeloop` command in the calibration program 
+
+On the robot side, the calibration program will ask you what you would like to do.
 
 Place the robot at a desired waypoint and enter `savepose`.  It will then ask you what file to save to.
 Enter the suggested value of `points.json`. It will then ask you what you would like to name the point. 
