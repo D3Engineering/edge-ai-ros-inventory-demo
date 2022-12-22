@@ -1,11 +1,11 @@
-# edge-ai-ros-inventory-demo
+# D3 + TI Robot Inventory Demo
 
-## Getting started
+## Getting Started
 
 This guide assumes that you have a ROS1 docker container with all of the necessary demo code installed.
 If that is not the case, please follow _TODO: this guide._
 
-To log in to the robot, set up the wifi router and log in over wifi:
+To log in to the robot, set up the wireless router and log in over SSH:
 
 ```
 # no password - if this doesn't work you have the wrong address!
@@ -19,7 +19,18 @@ screen /dev/ttyUSBX 115200
 login: root
 ```
 
-### Calibrating the scene:
+### Wireless Setup and Troubleshooting
+
+We have a Router, Robot, and Host PC that have been prepared to work out of the box. To begin, do the following:
+1. Plug in the Router, and turn it on. If needed, the Network Credentials are on a white tag tied to the Router
+2. Turn on the Host PC. It should automatically connect and pull the IP `192.168.50.50`
+3. Turn on the Robot. It should automatically connect and pull the IP `192.168.50.200`. If the robot does not connect, you'll need to use the scripts in `/usr/share/intel9260/` to get reconnected. Steps to do so are as follows:
+   1. `cd /usr/share/intel9260/`
+   2. `./sta_stop.sh`
+   3. `./sta_start.sh`
+   4. `./sta_connect-ex.sh <SSID> WPA-PSK <Password>` where `<SSID>` is replaced with the SSID, and `<Password>` is replaced with the Password from the Network Credentials tag
+
+### Calibrating the Scene
 
 (TODO - READ ME AND DETERMINE MY ACCURACY)
 
@@ -35,7 +46,7 @@ open the file and edit the line below
 Replace `<distance>` with your value (in meters), ideally up to two decimals in precision.
 
 
-### Setting the waypoints
+### Setting Waypoints
 
 First - you must launch the docker container:
 
@@ -66,7 +77,7 @@ desired locations and saving the pose until you've captured all of the ones you 
 
 Note: you may re-calibrate any individual point as long as it successfully saves the file.
 
-### Running the demo
+### Running the Demo
 
 If you are not already in the docker container you must launch it:
 `/home/root/j7ros_home/tda4_docker_run.sh`
@@ -86,7 +97,13 @@ If you're just testing the demo and you don't care about the front-facing camera
 If obstacle avoidance is not working, run this launch file: `d3_inventory_demo demo.launch`
 
 
-### Visualizing the demo
+### Visualizing the Demo
+
+To set up the stage display for use with the Visualizer, do the following:
+
+1. Turn on the Visualizer PC and connect to the network
+2. Connect the display via HDMI
+3. In Settings, ensure that the external monitor is set as the Primary Display and that its resolution is set to 1920x1080
 
 To run the visualizer, do the following:
 
@@ -96,14 +113,14 @@ To run the visualizer, do the following:
 4. Wait for Docker to Start
 5. Run the command `source devel/setup.bash`
 6. Once the `roscore` has been launched on the Robot, run `roslaunch d3_inv_viz inventory_viz.launch` on the Visualizer PC
-7. The Visualizer should appear. If it does not, check the console for errors. The error `unable to contact ROS master` means that the Robot was unreachable. Check that you can ping the robot at `192.168.50.200` and relaunch the Visualizer. Other error messages may occur related to the window manager, they can be ignored and you can relaunch the Visualizer
+7. The Visualizer should appear. If it does not, check the console for errors. The error `unable to contact ROS master` means that the Robot was unreachable. Check that you can ping the robot at `192.168.50.200` and relaunch the Visualizer. Other error messages may occur related to the window manager (`Gdk-ERROR`/`X Window System Error`), they can be ignored and you can relaunch the Visualizer
 
-## Advanced configuration
+## Advanced Configuration
 
 Below is configuration that is not necessary to get the demo online, but if you want to change
 how the demo works at all, this section may help you.
 
-### Changing demo objectives
+### Changing Demo Objectives
 
 The demo is configurable with JSON files in the directory `/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/`
 The demo works by having "objectives" that it accomplishes at particular waypoints. By default, it will read the `objectives.json` file
