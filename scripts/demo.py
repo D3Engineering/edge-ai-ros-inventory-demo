@@ -23,7 +23,7 @@ from d3_apriltag import apriltag_odom
 POINT_FILE_PATH = "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"
 OBJECTIVE_FILE_PATH = "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"
 
-WAIT_FOR_PC = False
+WAIT_FOR_PC = True
 
 # Points & objectives are populated during the startup routine
 # Each objective must have a matching point[objective.point_name]

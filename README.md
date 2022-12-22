@@ -57,8 +57,8 @@ Currently, the demo objectives are configured for the following points, in order
 * `point_a`
 * `point_b`
 * `point_c`
+* `point_d`
 * `crowd`
-* `home`
 
 Use these point names if you don't want to edit the objectives file. Continue placing the robot at the
 desired locations and saving the pose until you've captured all of the ones you need for your demo.
@@ -111,15 +111,8 @@ and the `points.json` file, then figure out at what points the objectives need t
 
 ```
 {
-  "Home": {
-    "sequence": 6,
-    "point_name": "home",
-    "action": "DONE",
-    "precise_goal": false,
-    "action_info": {}
-  },
   "Shelf A": {
-    "sequence": 0,
+    "sequence": 10,
     "point_name": "point_a",
     "action": "SCAN",
     "action_info": {
@@ -127,7 +120,7 @@ and the `points.json` file, then figure out at what points the objectives need t
     }
   },
   "Shelf B": {
-    "sequence": 1,
+    "sequence": 20,
     "point_name": "point_b",
     "action": "SCAN",
     "action_info": {
@@ -135,7 +128,7 @@ and the `points.json` file, then figure out at what points the objectives need t
     }
   },
   "Shelf C": {
-    "sequence": 2,
+    "sequence": 30,
     "point_name": "point_c",
     "action": "SCAN",
     "precise_goal": true,
@@ -143,19 +136,29 @@ and the `points.json` file, then figure out at what points the objectives need t
       "number_targets": 1
     }
   },
+  "Shelf D": {
+    "sequence": 40,
+    "point_name": "point_d",
+    "action": "SCAN",
+    "precise_goal": true,
+    "action_info": {
+      "number_targets": 1
+    }
+  },
   "the Audience": {
-    "sequence": 5,
+    "sequence": 50,
     "point_name": "crowd",
     "action": "TRACK",
     "action_info": {
-      "duration": 3
+      "duration": 30
     },
     "precise_goal": false
   }
 }
 ```
 
-Each objective starts with its display name (this is what is displayed on the Visualizer) - in this file there are four: "Home", "Shelf A", "Shelf B", "Shelf C", and "the Audience"
+Each objective starts with its display name (this is what is displayed on the Visualizer)
+in this file there are Five: "Shelf A", "Shelf B", "Shelf C", "Shelf D", and "the Audience"
 
 The rest of the fields mean the following:
 
@@ -177,4 +180,5 @@ The rest of the fields mean the following:
 
 WARNING: each objective MUST HAVE A CORRESPONDING POINT - if it doesn't then the demo will crash and raise the following error:
 `"WARNING: Objective '" + obj.name + "' has no corresponding point named '" + obj.point_name + "' - removing..."`
- This means you need to either: add a point to points.json via calibration, fix the corresponding point name in the objective, or remove the objective
+This means you need to either: add a point to points.json via calibration, fix the corresponding point name in the objective, or remove the objective
+
