@@ -9,6 +9,9 @@
     <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen">
         <param name="point_file"        value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"/>
         <param name="objective_file"    value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"/>
+        <!-- number of poses the robot will use to estimate position during localization step -->
+        <param name="num_poses"         value="3"/>
+        <!-- Whether the robot will wait for the visualizer for scanning before continuing - set to false for testing purposes-->
         <param name="wait_for_pc"       value="True"/>
     </node>
 
@@ -19,7 +22,7 @@
         <arg name="camera_info_url"     value="file:///opt/imaging/imx390/robotcam3_equidistant_960x540_rect.yml"/>
         <arg name="width"               value="960"/>
         <arg name="height"              value="540"/>
-        <arg name="framerate"           value="15"/>
+        <arg name="framerate"           value="10"/>
         <arg name="framelimit"          value="true"/>
         <arg name="command_port"        value="/dev/frontradarcontrol"/>
         <arg name="data_port"           value="/dev/frontradardata"/>

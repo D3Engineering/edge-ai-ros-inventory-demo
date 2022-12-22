@@ -23,6 +23,7 @@ from d3_apriltag import apriltag_odom
 POINT_FILE_PATH = None
 OBJECTIVE_FILE_PATH = None
 WAIT_FOR_PC = None
+NUM_POSES = None
 
 # Points & objectives are populated during the startup routine
 # Each objective must have a matching point[objective.point_name]
@@ -204,7 +205,7 @@ def startup():
     rospy.loginfo(state)
 
     # Set up apriltag for localization
-    april_tag = apriltag_odom.apriltag_odom(3, "/back/imx390/camera_info", "/back/imx390/image_raw_rgb", "imx390_rear_temp_optical", "apriltag21")
+    april_tag = apriltag_odom.apriltag_odom(NUM_POSES, "/back/imx390/camera_info", "/back/imx390/image_raw_rgb", "imx390_rear_temp_optical", "apriltag21")
 
     populate_objectives()
 
@@ -262,6 +263,7 @@ if __name__ == '__main__':
         POINT_FILE_PATH = rospy.get_param('~point_file', "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json")
         OBJECTIVE_FILE_PATH = rospy.get_param('~objective_file', "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json")
         WAIT_FOR_PC = rospy.get_param('~wait_for_pc', True)
+        NUM_POSES = rospy.get_param('~num_poses', 3)
 
         process_state(state, None)
         while not rospy.is_shutdown():
