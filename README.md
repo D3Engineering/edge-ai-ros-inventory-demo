@@ -85,7 +85,6 @@ Currently, the demo objectives are configured for the following points, in order
 Use these point names if you don't want to edit the objectives file. Continue placing the robot at the
 desired locations and saving the pose until you've captured all the ones you need for your demo.
 
-
 Note: you may re-calibrate any individual point as long as it successfully saves the file.
 
 ### Running the Demo
@@ -124,10 +123,65 @@ To run the visualizer, do the following:
 6. Once the `roscore` has been launched on the Robot, run `roslaunch d3_inv_viz inventory_viz.launch` on the Visualizer PC
 7. The Visualizer should appear. If it does not, check the console for errors. The error `unable to contact ROS master` means that the Robot was unreachable. Check that you can ping the robot at `192.168.50.200` and relaunch the Visualizer. Other error messages may occur related to the window manager (`Gdk-ERROR`/`X Window System Error`), they can be ignored, and you can relaunch the Visualizer
 
+
+### Help! The DLP doesn't work
+
+This has happened to us a few times.  Here are some things that may help:
+
+First try `rostopic echo /dlp/dlp_command` - this is the command sent to the DLP.
+If it's blank, then the DLP isn't changing because it's not seeing commands.
+Even if you don't suspect this is the issue, simply querying this rostopic may fix it anyway.
+
+If you are still having issues, make sure you have `HOST_MUTE` and `FPGA_PROG_EN` both in the off position.
+
+If you are still having issues, stop the demo, unplug the DLP, plug the DLP back in, then re-start the demo
+(remember if you ran the demo with the front-facing camera then you will need to restart the unit before you can run a demo again)
+
+Finally there is a test script if you just want to see the DLP work
+
+```
+# First start up a ros core:
+roscore &
+
+# Then launch the node that controls the DLP
+roslaunch d3_dlp dlp.launch
+
+# then in a different terminal, run the tester-script:
+rosrun d3_dlp dlp_test.py
+```
+
+Once the script is running, you can enter W,A,S, and D to change the directions, Q to "stop", E to "scan",
+and anything else will set it to the logo.
+
+There are also rospy.logdebug() lines inside of the different python scripts, so turning on debug may help
+
 ## Advanced Configuration
 
 Below is configuration that is not necessary to get the demo online, but if you want to change
 how the demo works at all, this section may help you.
+
+### Arguments inside the launch file
+
+The demo node supports a few arguments:
+
+```
+    <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen">
+        <param name="point_file"        value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"/>
+        <param name="objective_file"    value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"/>
+        <!-- number of poses the robot will use to estimate position during localization step -->
+        <param name="num_poses"         value="3"/>
+        <!-- Whether the robot will wait for the visualizer for scanning before continuing - set to false for testing purposes-->
+        <param name="wait_for_pc"       value="True"/>
+    </node>
+```
+
+`point_file` and `objective_file` tell the node where to find it's objectives and points.  Best leave these at the defaults
+
+`wait_for_pc` will tell the node whether it needs to wait for the visualizer to continue.
+Set it to false if you want to quickly test the demo routine without scanning.  Otherwise leave it as "true"
+
+`num_poses` will tell the node how many frames to grab from the rear camera for estimating the current robot position.  More poses
+will increase the accuracy, but since the rear camera runs at 2 FPS it can substantially increase the time the robot takes to localize.
 
 ### Changing Demo Objectives
 
@@ -203,6 +257,9 @@ The rest of the fields mean the following:
   * `NOOP`: No fields are used
   * `DONE`: No fields are used
 
+NOTE: The objective file is re-loaded live during the demo.  Once the robot has completed all of it's objectives,
+it will re-read the same file and iterate through all the objectives again.  Make sure that if you change the objective
+file that it is valid - otherwise it will crash the robot (see below).
 
 WARNING: each objective MUST HAVE A CORRESPONDING POINT - if it doesn't then the demo will crash and raise the following error:
 `"WARNING: Objective '" + obj.name + "' has no corresponding point named '" + obj.point_name + "' - removing..."`
