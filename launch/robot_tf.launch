@@ -1,12 +1,8 @@
-<!-- XML -->
+<!-- Contains all transforms for the robot: front/left/right radar, rear camera, and april-tag-to-map -->
 <launch>
     <node pkg="tf" type="static_transform_publisher" name="map_to_apriltag21" args="0 0 2.47 0 0 3.14159 map apriltag21 100" />
     <node pkg="tf" type="static_transform_publisher" name="imx390_rear_temp_to_base_link_temp" args="0 0.125 0 1.57079 0 0 imx390_rear_temp_optical base_link_temp 100" />
     <node pkg="tf" type="static_transform_publisher" name="base_link_to_front_radar" args="0.30 0 0 0 0 0 base_link front_radar 100" />
     <node pkg="tf" type="static_transform_publisher" name="base_link_to_left_radar"  args="0.10  0.15 0  1.57079 0 0 base_link left_radar 100" />
     <node pkg="tf" type="static_transform_publisher" name="base_link_to_right_radar" args="0.10 -0.15 0 -1.57079 0 0 base_link right_radar 100" />
-
-    <!--
-    <node pkg="tf" type="static_transform_publisher" name="base_link_to_imx390_rear" args="-0.125 0 0 0 -1.57079 0 base_link imx390_rear_optical 100" />
-    -->
 </launch>

@@ -1,11 +1,16 @@
-<!-- XML -->
+<!-- Full demo launch file - same as demo.launch but with the front camera+radar fusion -->
 <launch>
     <!-- Movement nodes -->
     <include ns="drive" file="$(find scuttle_driver)/launch/scuttle_driver.launch"/>
     <include file="$(find d3_2dnav)/launch/move_base.launch"/>
+
+    <!-- DLP node -->
     <include file="$(find d3_dlp)/launch/dlp.launch"/>
-    <!-- Demo Nodes -->
+
+    <!-- Setup cameras -->
     <include file="$(find d3_inventory_demo)/launch/demo_cameras.launch"/>
+
+    <!-- Demo Node -->
     <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen">
         <param name="point_file"        value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"/>
         <param name="objective_file"    value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"/>
@@ -26,10 +31,10 @@
         <arg name="framelimit"          value="true"/>
         <arg name="command_port"        value="/dev/frontradarcontrol"/>
         <arg name="data_port"           value="/dev/frontradardata"/>
-        <arg name="frame_id" value="front_radar"/>
+        <arg name="frame_id"            value="front_radar"/>
     </include>
 
-    <!-- Radar Nodes -->
+    <!-- Radar Nodes - (not used)-->
     <include file="$(find d3_fusion)/launch/radar.launch" ns="left">
         <arg name="command_port" value="/dev/leftradarcontrol"/>
         <arg name="data_port" value="/dev/leftradardata"/>
@@ -42,9 +47,6 @@
         <arg name="frame_id" value="right_radar"/>
     </include>
 
-    <!--
-    <include file="$(find d3_motorctl)/launch/motor.launch"/>
-    <include file="$(find d3_motorctl)/launch/odom.launch"/>
-    -->
+    <!-- Robot static transforms -->
     <include file="$(find d3_inventory_demo)/launch/robot_tf.launch"/>
 </launch>

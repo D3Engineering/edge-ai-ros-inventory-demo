@@ -1,4 +1,5 @@
-<!-- XML -->
+<!-- Launch file for IMX390 camera - each instance launches one camera -->
+<!-- Similar to the one in d3_fusion - but without any post-processing-->
 <launch>
 
     <!-- These parameters vary per-camera -->

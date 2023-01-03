@@ -1,14 +1,17 @@
-<!-- XML -->
+<!-- demo.launch file - activates only what is necessary to run the demo (without the track state) -->
+<!-- Left + Back camera, motors + odometry, move_base + 2dnav, DLP, static transforms and the demo script-->
 <launch>
-    <!--
-    <include file="$(find d3_motorctl)/launch/motor.launch"/>
-    <include file="$(find d3_motorctl)/launch/odom.launch"/>
-    -->
+    <!-- Movement nodes -->
     <include ns="drive" file="$(find scuttle_driver)/launch/scuttle_driver.launch"/>
     <include file="$(find d3_2dnav)/launch/move_base.launch"/>
+
+    <!-- DLP node -->
     <include file="$(find d3_dlp)/launch/dlp.launch"/>
 
+    <!-- Setup cameras -->
     <include file="$(find d3_inventory_demo)/launch/demo_cameras.launch"/>
+
+    <!-- Demo Node -->
     <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen">
         <param name="point_file"        value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"/>
         <param name="objective_file"    value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"/>
@@ -18,5 +21,6 @@
         <param name="wait_for_pc"       value="True"/>
     </node>
 
+    <!-- Robot static transforms -->
     <include file="$(find d3_inventory_demo)/launch/robot_tf.launch"/>
 </launch>

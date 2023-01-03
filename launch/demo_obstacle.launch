@@ -1,14 +1,27 @@
-<!-- XML -->
+<!-- Obstacle avoidance demo launch file - same as demo.launch but with radars to enable obstacle avoidance -->
+<!-- No longer avoids obstacles due to changes in the 2dnav package. -->
 <launch>
-    <!--
-    <include file="$(find d3_motorctl)/launch/motor.launch"/>
-    <include file="$(find d3_motorctl)/launch/odom.launch"/>
-    -->
-    <include file="$(find d3_inventory_demo)/launch/demo_cameras.launch"/>
+    <!-- Movement nodes -->
     <include ns="drive" file="$(find scuttle_driver)/launch/scuttle_driver.launch"/>
-    <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen"/>
     <include file="$(find d3_2dnav)/launch/move_base.launch"/>
 
+    <!-- DLP node -->
+    <include file="$(find d3_dlp)/launch/dlp.launch"/>
+
+    <!-- Setup cameras -->
+    <include file="$(find d3_inventory_demo)/launch/demo_cameras.launch"/>
+
+    <!-- Demo Node -->
+    <node pkg="d3_inventory_demo" type="demo.py" name="d3_inventory_demo_node" output="screen">
+        <param name="point_file"        value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"/>
+        <param name="objective_file"    value="/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"/>
+        <!-- number of poses the robot will use to estimate position during localization step -->
+        <param name="num_poses"         value="3"/>
+        <!-- Whether the robot will wait for the visualizer for scanning before continuing - set to false for testing purposes-->
+        <param name="wait_for_pc"       value="True"/>
+    </node>
+
+    <!-- Radar Nodes -->
     <include file="$(find d3_fusion)/launch/radar.launch" ns="front">
         <arg name="command_port" value="/dev/frontradarcontrol"/>
         <arg name="data_port" value="/dev/frontradardata"/>
@@ -27,6 +40,6 @@
         <arg name="frame_id" value="right_radar"/>
     </include>
 
-    <!-- All robot transforms -->
+    <!-- Robot static transforms -->
     <include file="$(find d3_inventory_demo)/launch/robot_tf.launch"/>
 </launch>
