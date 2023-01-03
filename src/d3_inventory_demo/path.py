@@ -1,5 +1,15 @@
 #!/bin/env python3
 
+################
+# path.py is a helper file used for testing goal-setting and pathing for the robot.
+#
+# In the final demo, it is only used for `pose_to_goal` which just takes a target pose
+# and returns a MoveBaseGoal, one that can be sent directly to MoveBase.
+#
+# The rest of this file can be used for testing simple goals (E.G, move in a straight line
+# at angle X for distance Y).
+################
+
 import rospy
 import actionlib
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
@@ -8,6 +18,7 @@ from nav_msgs.msg import Odometry
 import tf
 import math
 
+# Helper function - converts quaternion vector to an euler vector
 def quaternion_to_euler(pose_q):
     quaternion = (
         pose_q.x,
@@ -18,11 +29,15 @@ def quaternion_to_euler(pose_q):
     # (roll, pitch, yaw)
     return euler
 
+# Helper function - converst an euler vector to a quaternion vector
 def euler_to_quaternion(pose_e):
     quaternion = tf.transformations.quaternion_from_euler(*pose_e)
     # (x, y, z, w)
     return quaternion
 
+# Helper function - given a starting position - will create a target pose
+# that has an offset of <distance> meters at <angle> angle.  The vector's orientation
+# will point directly away from the origin point.
 def set_target_position(start_pose, distance, angle = 0):
     pose_q = start_pose.orientation
     pose_e = quaternion_to_euler(pose_q)
@@ -36,7 +51,7 @@ def set_target_position(start_pose, distance, angle = 0):
     target_pose.orientation = Quaternion(*euler_to_quaternion(pose_e))
     return target_pose
 
-
+# Converts a given target pose into a move-base-goal.
 def pose_to_goal(target_pose):
     goal = MoveBaseGoal()
 
@@ -47,6 +62,7 @@ def pose_to_goal(target_pose):
     return goal
 
 
+# Main method used for testing move base goals
 def movebase_client():
 
     client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
