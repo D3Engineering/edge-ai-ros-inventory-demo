@@ -1,61 +1,62 @@
 #!/bin/env python3
 
-############################
-# demo.py is the `main method` of the robot demo.
-#
-# This script allows the robot to path around a small course using odometry + an april-tag for localization,
-# scan shelves for items, and track the crowd with radar-camera fusion.
-#
-############################
-# Code Overview
-#
-# The robot operates at two levels: at a high level - it uses "Objectives" determines it's overall plan,
-# at a lower level "states" determine what to do next:
-#
-# "Objectives" are the combination of a target position, plus an action to do (see objective.py for details)
-# "States" are the individual actions, such as driving and scanning, etc. (see robot_state.py for all states)
-#
-# The core loop of the robot is as follows:
-#
-# For each objective:
-#    Drive to the objective's target position (using move-base)
-#    Localize the robot (using the over-head apriltag)
-#    Perform objective action (typically via the visualizer)
-#
-############################
-# Demo Constraints:
-#
-# The following things must be set up before the demo is run:
-#
-# * The scene must have a singular apriltag that is visible at all times
-#       during the demo. We use a large tag placed high off the ground + an upward-facing camera
-# * The objectives.json file should be configured to match your demo scenario
-# * The robot must have had all points referenced in objectives.json calibrated
-#
-# The following is optional, but the demo will be incomplete without it:
-# * a PC must be set up on the same network as the robot such that it can
-#       run the visualization code.
-#
-############################
-# Launch Parameters:
-#
-# point_file: The file which contains the results from the point-calibration script.
-#             the robot should be calibrated such that there is a point for each unique objective
-#             location.
-#             DEFAULT: "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"
-#
-# objective_file: The file which contains all of the objectives for the robot.
-#             DEFAULT: "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"
-#
-# wait_for_pc: Determines whether the robot will wait for a response from the PC or just keep driving
-#              if TRUE then the robot will wait for the PC when starting up and before leaving a SCAN site.
-#              DEFAULT:True
-#
-# num_poses: The number of pictures the robot will capture from it's pose-camera before
-#            estimating it's current position with respect to the april tag
-#             DEFAULT: 3
-#
-############################
+"""
+demo.py is the `main method` of the robot demo.
+
+This script allows the robot to path around a small course using odometry + an april-tag for localization,
+scan shelves for items, and track the crowd with radar-camera fusion.
+
+-------------
+Code Overview
+-------------
+The robot operates at two levels: at a high level - it uses "Objectives" determines it's overall plan,
+at a lower level "states" determine what to do next:
+
+"Objectives" are the combination of a target position, plus an action to do (see objective.py for details)
+"States" are the individual actions, such as driving and scanning, etc. (see robot_state.py for all states)
+
+The core loop of the robot is as follows:
+
+For each objective:
+    Drive to the objective's target position (using move-base)
+    Localize the robot (using the over-head apriltag)
+    Perform objective action (typically via the visualizer)
+
+-----------------
+Demo Constraints:
+-----------------
+
+The following things must be set up before the demo is run:
+
+* The scene must have a singular apriltag that is visible at all times
+    during the demo. We use a large tag placed high off the ground + an upward-facing camera
+* The objectives.json file should be configured to match your demo scenario
+* The robot must have had all points referenced in objectives.json calibrated
+
+The following is optional, but the demo will be incomplete without it:
+* a PC must be set up on the same network as the robot such that it can
+    run the visualization code.
+
+------------------
+Launch Parameters:
+------------------
+
+point_file: The file which contains the results from the point-calibration script.
+            the robot should be calibrated such that there is a point for each unique objective
+            location.
+            DEFAULT: "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/points.json"
+
+objective_file: The file which contains all of the objectives for the robot.
+            DEFAULT: "/opt/robotics_sdk/ros1/drivers/d3_inventory_demo/config/objectives.json"
+
+wait_for_pc: Determines whether the robot will wait for a response from the PC or just keep driving
+             if TRUE then the robot will wait for the PC when starting up and before leaving a SCAN site.
+             DEFAULT:True
+
+num_poses: The number of pictures the robot will capture from it's pose-camera before
+           estimating it's current position with respect to the april tag
+           DEFAULT: 3
+"""
 
 import rospy
 import math
@@ -111,11 +112,15 @@ dmtx_count_pub = None
 # for estimating pose using apriltags
 april_tag = None
 
-#################
-# Given a current state and objective, will issue the next command to the robot.
-# This function lets us map "states" to particular robot actions.
-#################
 def process_state(current_state, current_objective):
+    """
+    Given a current state and objective, will issue the next command to the robot.
+    This function lets us map "states" to particular robot actions.
+
+    :param current_state: Current state of the robot
+    :param current_objective: current objective of the robot
+    :return: None
+    """
     # If we're in startup - state_pub is empty, so we can't publish yet
     # In the event of a NOOP, we don't publish that state because we're just
     # going to drive to the next location immediately anyway.
@@ -137,15 +142,18 @@ def process_state(current_state, current_objective):
     elif state is RobotState.DONE:
         done()
 
-#################
-# Localize the robot - updates map->odom transformation so that
-# the robot position matches the position given by the apriltag.
-# This function will stop the robot for long enough to capture
-# the configured number of poses from the overhead apriltag.
-#
-# This function is not a state! instead, it's run after each move_base goal.
-#################
 def localize():
+    """
+    Localize the robot - updates map->odom transformation so that
+    the robot position matches the position given by the apriltag.
+    This function will stop the robot for long enough to capture
+    the configured number of poses from the overhead apriltag.
+
+    This function is not a state! instead, it's run after each move_base goal.
+
+    :return: None
+    """
+
     rospy.loginfo("Localizing...")
 
     # Run april-tag detection code to determine robot position
@@ -183,21 +191,24 @@ def localize():
     map2odom_quat = R.from_matrix(map2odom_mat[:3,:3]).as_quat()
     map2odom_pos = map2odom_mat[:3,3]
 
-    # Publish result in map->odom transform - static transform 
+    # Publish result in map->odom transform - static transform
     tf_broadcaster.broadcast_transform("map", "odom", map2odom_pos, map2odom_quat)
     rospy.sleep(0.01)
 
-#################
-# Drive state action
-#
-# Given a target point - drive() will create a move-base-goal and send it to move_base,
-# then wait for the robot to reach that goal.  Upon reaching its' destination, it will
-# rerun localize() to correct for any odometry error.
-#
-# If precise goal is true, then after localizing it will continue to drive
-# to the original target point until it meets its' position / rotational requirements.
-#################
 def drive(target_name, precise = True):
+    """
+    Drive state action
+    Given a target point - drive() will create a move-base-goal and send it to move_base,
+    then wait for the robot to reach that goal.  Upon reaching its' destination, it will
+    rerun localize() to correct for any odometry error.
+
+    If precise goal is true, then after localizing it will continue to drive
+    to the original target point until it meets its' position / rotational requirements.
+
+    :param target_name: the name of the point which the robot will drive to
+    :param precise: whether or not the goal is precise
+    :return: the result of the last move_base goal
+    """
     global state, points
     if target_name not in points.keys():
         raise ValueError("Error - pathing to point that does not exist")
@@ -299,14 +310,16 @@ def drive(target_name, precise = True):
     # Likely outdated - but returns the result of the last move-base-goal exectued.
     return move_base_client.get_result()
 
-#################
-# Scan state action.  Will publish information so the visualizer PC can scan datamatrices.
-# If WAIT_FOR_PC is true then the robot will wait for the PC to respond before continuing.
-#
-# num_targets indicates to the PC how many datamatrices it should expect at its' destination.
-# in our testing we have found this parameter was not helpful so we leave it at 1.
-#################
 def scan(num_targets = 1):
+    """
+    Scan state action.  Will publish information so the visualizer PC can scan datamatrices.
+    If WAIT_FOR_PC is true then the robot will wait for the PC to respond before continuing.
+
+    num_targets indicates to the PC how many datamatrices it should expect at its' destination.
+
+    :param num_targets: Number of targets to tell the visualizer to expect
+    :return: None
+    """
     global state, WAIT_FOR_PC
     rospy.loginfo(state)
     dmtx_count_pub.publish(num_targets)
@@ -315,11 +328,13 @@ def scan(num_targets = 1):
         rospy.loginfo("Waiting for response from visualizer")
         rospy.wait_for_message('/viz_resp', String)
 
-#################
-# Startup state action.  Sets up a lot of publishers and
-# other objects for usage later in the demo.
-#################
 def startup():
+    """
+    Startup state action.  Sets up a lot of publishers and
+    other objects for usage later in the demo.
+
+    :return: None
+    """
     global state, state_pub, dmtx_count_pub
     global april_tag, tf_broadcaster, tf_listener, move_base_client
 
@@ -362,18 +377,21 @@ def startup():
     # Last step before doing anything - the robot must be localized
     localize()
 
-#################
-# Loads the POINT_FILE and OBJECTIVE_FILE into their respective global objects.  These
-# files must have proper json formatting.  For details on how to populate them -see README.md
-# on calibration and on objectives.
-#
-# points is a map from [point_name] -> Pose
-# objectives is an ordered list of Objective objects.
-#
-# If for whatever reason you have an objective that maps to a point that
-# doesn't exist, the program will quit
-#################
 def populate_objectives():
+    """
+    Loads the POINT_FILE and OBJECTIVE_FILE into their respective global objects.  These
+    files must have proper json formatting.  For details on how to populate them -see README.md
+    on calibration and on objectives.
+
+    points is a map from [point_name] -> Pose
+    objectives is an ordered list of Objective objects.
+
+    If for whatever reason you have an objective that maps to a point that
+    doesn't exist, the program will quit
+
+    :return: None
+    """
+
     global points, objectives
     # Populate points && objectives for the demo:
     points = Objective.read_point_file(POINT_FILE_PATH)
@@ -383,37 +401,45 @@ def populate_objectives():
             raise ValueError("WARNING: Objective '" + obj.name + "' has no corresponding point named '" + obj.point_name + "' - removing...")
             objectives.remove(obj)
 
-#################
-# Track state action.  Track doesn't do anything
-# from the robot perspective except sleep for the configured duration.
-# the visualizer will display the radar+camera fusion data during this state
-#################
 def track(duration):
+    """
+    Track state action.  Track doesn't do anything
+    from the robot perspective except sleep for the configured duration.
+    the visualizer will display the radar+camera fusion data during this state
+
+    :param duration: How long to wait before moving to the next objective
+    :return: None
+    """
+
     global state
     rospy.loginfo(state)
     rospy.sleep(duration)
 
-#################
-# NOOP state action.
-# Doesn't do anything at all.
-#################
 def nothing():
+    """
+    NOOP state action.
+    Doesn't do anything at all.
+
+    :return: None
+    """
+
     global state
     rospy.loginfo(state)
 
-#################
-# DONE state action.  Waits for the user
-# to press enter, at which point the demo will continue.
-#################
 def done():
+    """
+    DONE state action.  Waits for the user
+    to press enter, at which point the demo will continue.
+
+    :return: None
+    """
+
     global state
     rospy.loginfo(state)
     input("PRESS ENTER TO CONTINUE")
 
-#################
 # Since most setup is handled in the STARTUP state
 # this main method is just the parameter handling + core logic of the robot.
-#################
 if __name__ == '__main__':
     try:
         state = RobotState.STARTUP
