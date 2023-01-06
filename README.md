@@ -1,5 +1,20 @@
 # D3 + TI Robot Inventory Demo
 
+## Required Packages
+
+If you installed this with our [installation script](https://github.com/D3Engineering/edge-ai-init), you will have all the dependencies you need.
+
+Otherwise - make sure you have the necessary dependencies, including:
+
+https://github.com/D3Engineering/edge-ai-ros-2dnav
+https://github.com/D3Engineering/edge-ai-ros-apriltag
+https://github.com/D3Engineering/edge-ai-ros-dlp
+https://github.com/D3Engineering/edge-ai-ros-fusion
+
+Additionally, you'll want this package on your visualizer:
+
+https://github.com/D3Engineering/edge-ai-ros-inventory-viz
+
 ## Getting Started
 
 To log in to the robot, set up the wireless router and log in over SSH:
